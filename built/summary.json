@@ -2,111 +2,111 @@
  "ai": {
   "file": "ai-engine.tar.gz",
   "size": 13465556,
-  "md5": "bbe5a3f048bab0b7dd1751eb728c9d0c",
+  "md5": "2b8958d10da8400e51c6e6cee709666c",
   "version": "3.14.10-eng1",
   "desc": "AI 应用开发（Python 3.14 + 在线安装 openai/langchain）",
   "bin": "bin/python"
  },
  "aiagent": {
   "file": "aiagent-engine.tar.gz",
-  "size": 13465556,
-  "md5": "050073a1ef570bd8d01dddacd2420fd7",
+  "size": 13465552,
+  "md5": "ea451be55d6c0db3931da441dc7c601c",
   "version": "3.14.10-eng1",
   "desc": "AI Agent 框架（LangGraph/CrewAI 运行环境）",
   "bin": "bin/python"
  },
  "apkbuild": {
   "file": "apkbuild-engine.tar.gz",
-  "size": 129927778,
-  "md5": "3024ade63512d808903456de8ee49ee7",
+  "size": 129927722,
+  "md5": "1f43ba86d3de7ba9a6191a5babb5821c",
   "version": "17.0.21-2-eng1",
   "desc": "APK 打包工具链（JDK 17 + 签名）",
   "bin": "bin/java"
  },
  "git": {
   "file": "git-engine.tar.gz",
-  "size": 18034032,
-  "md5": "ac3e038ff048cff78127e4e8ea60c98a",
+  "size": 18033340,
+  "md5": "7cf7333d23811e8c676d94966c578201",
   "version": "2.56.1-eng1",
   "desc": "Git 2.56 分布式版本管理",
   "bin": "bin/git"
  },
  "kotlin": {
   "file": "kotlin-engine.tar.gz",
-  "size": 234850684,
-  "md5": "b2965084798ca991f0a2ab62f7b30362",
+  "size": 234850279,
+  "md5": "f91668c65544aec3fa85e688d8163cf4",
   "version": "2.4.21-eng1",
   "desc": "Kotlin 2.4 编译器（自带 JDK 21）",
   "bin": "bin/kotlin"
  },
  "mpalipay": {
   "file": "mpalipay-engine.tar.gz",
-  "size": 37425547,
-  "md5": "abc5ab809d528ca8fbc298660136a992",
+  "size": 37425627,
+  "md5": "75e0ef6e856c1170637bdbc14323a998",
   "version": "24.22.3-eng1",
   "desc": "支付宝小程序（axml/acss/js）",
   "bin": "bin/node"
  },
  "mpdouyin": {
   "file": "mpdouyin-engine.tar.gz",
-  "size": 37425616,
-  "md5": "dbe12bdc9a4723bd4f6e16cb6ebe298c",
+  "size": 37425649,
+  "md5": "ddeaee3a633b6a0b62e4f2d91486494b",
   "version": "24.22.3-eng1",
   "desc": "抖音小程序（ttml/ttss/js）",
   "bin": "bin/node"
  },
  "mpweixin": {
   "file": "mpweixin-engine.tar.gz",
-  "size": 37426609,
-  "md5": "9a4297d5d4fe10f559fae9b215572840",
+  "size": 37426847,
+  "md5": "490f8074090c603ce8d25c8992710cf8",
   "version": "24.22.3-eng1",
   "desc": "微信小程序（wxml/wxss/js + miniprogram-ci）",
   "bin": "bin/node"
  },
  "mysql": {
   "file": "mysql-engine.tar.gz",
-  "size": 53003274,
-  "md5": "8f82884ba28d780a4038d46c62a70cad",
+  "size": 53003763,
+  "md5": "b1391a7e36ea1fef1a68bfd5eb142b28",
   "version": "13.0.2-eng1",
   "desc": "MariaDB 13 数据库服务",
   "bin": "bin/mariadb"
  },
  "nginx": {
   "file": "nginx-engine.tar.gz",
-  "size": 4805759,
-  "md5": "79173435dfe41927a8dbee1f9de73a57",
+  "size": 4805756,
+  "md5": "79c2ce42a1571d8ac6892f71544282fe",
   "version": "1.31.8-eng1",
   "desc": "Nginx 1.31 Web 服务器 + 反向代理",
   "bin": "bin/nginx"
  },
  "nodejs": {
   "file": "nodejs-engine.tar.gz",
-  "size": 37425870,
-  "md5": "d15f120a84e672128011bfd2b00b8a8e",
+  "size": 37425986,
+  "md5": "74856a87eecedf9c344cd6c4fe496250",
   "version": "24.22.3-eng1",
   "desc": "Node.js 24 LTS 运行时",
   "bin": "bin/node"
  },
  "php": {
   "file": "php-engine.tar.gz",
-  "size": 53224495,
-  "md5": "e0d7ce4c2b25e84c3e282aa1a3962cab",
+  "size": 53224431,
+  "md5": "1ba3b36d90a98125f7ba7e8d26a0426d",
   "version": "8.5.12-2-eng1",
   "desc": "PHP 8.5 运行时 + php-fpm",
   "bin": "bin/php"
  },
  "redis": {
   "file": "redis-engine.tar.gz",
-  "size": 1752584,
-  "md5": "ce516aff9112105edbe3d8b36bf99ca2",
+  "size": 1752586,
+  "md5": "1fa3aa190b084c9c21a4985ed9ccdea1",
   "version": "8.10.3-eng1",
   "desc": "Redis 8 缓存 / 消息队列",
   "bin": "bin/redis-server"
  },
  "rust": {
   "file": "rust-engine.tar.gz",
-  "size": 351634105,
-  "md5": "f1ed18243ff26a60ed506b290dbbf4fc",
+  "size": 351634152,
+  "md5": "53d9936836a57aaa638ee64d24278b22",
   "version": "1.99.1-eng1",
   "desc": "Rust 1.99 + cargo（系统级/高性能）",
   "bin": "bin/rustc"
@@ -114,7 +114,7 @@
  "sqlite": {
   "file": "sqlite-engine.tar.gz",
   "size": 1527404,
-  "md5": "abe5b6259d60fa544b7b28c2a480c94b",
+  "md5": "9346016b158b1099dd02d5c446bf5b53",
   "version": "3.54.1-1-eng1",
   "desc": "SQLite 3.54 单文件数据库 + 命令行",
   "bin": "bin/sqlite3"
@@ -122,23 +122,23 @@
  "ssh": {
   "file": "ssh-engine.tar.gz",
   "size": 9854249,
-  "md5": "c2af988e0eea5f540fa697aa8eb9d6f4",
+  "md5": "05dca28f60932a52d527455e8e0053f0",
   "version": "10.6p2-eng1",
   "desc": "OpenSSH 10.6 客户端 + 服务端",
   "bin": "bin/ssh"
  },
  "sysbase": {
   "file": "sysbase-engine.tar.gz",
-  "size": 20811237,
-  "md5": "50df5140ab49a0ea1a0dd6c02b7b79dc",
+  "size": 20811219,
+  "md5": "4f782a469762aa9f75c837468f34ef5d",
   "version": "9.12-eng1",
   "desc": "Linux 系统工具集（busybox+curl+coreutils+常用命令）",
   "bin": "bin/ls"
  },
  "vim": {
   "file": "vim-engine.tar.gz",
-  "size": 14489433,
-  "md5": "bf5fb1ccbcfcd844554c7cb61e1407a9",
+  "size": 14489425,
+  "md5": "052e0eaa99253f5030f6403794342a18",
   "version": "0.12.6-eng1",
   "desc": "Neovim 0.12 终端编辑器",
   "bin": "bin/nvim"
