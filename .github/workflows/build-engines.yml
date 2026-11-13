@@ -1,0 +1,164 @@
+name: 构建引擎包
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'build/**'
+      - 'trigger/build.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TERMUX_MIRROR: 'https://mirrors.tuna.tsinghua.edu.cn/termux/apt/termux-main'
+  TAG: 'v1'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        engine:
+          - git
+          - sqlite
+          - nginx
+          - redis
+          - ssh
+          - vim
+          - sysbase
+          - nodejs
+          - php
+          - kotlin
+          - mysql
+          - ai
+          - aiagent
+          - mpweixin
+          - mpdouyin
+          - mpalipay
+          - apkbuild
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 缓存 deb
+        uses: actions/cache@v4
+        with:
+          path: build/cache
+          key: deb-${{ matrix.engine }}-${{ github.run_id }}
+          restore-keys: |
+            deb-${{ matrix.engine }}-
+            deb-
+
+      - name: 构建 ${{ matrix.engine }}
+        working-directory: build
+        run: |
+          df -h / | tail -1
+          python3 build_engine.py ${{ matrix.engine }}
+          echo "--- 产物 ---"
+          ls -la *.tar.gz
+          cat ${{ matrix.engine }}-info.json
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkg-${{ matrix.engine }}
+          path: |
+            build/*-engine.tar.gz
+            build/*-info.json
+          retention-days: 7
+          compression-level: 0
+
+  release:
+    needs: build
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 收集所有产物
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          pattern: pkg-*
+          merge-multiple: true
+
+      - name: 清单
+        run: |
+          echo "=== 构建结果 ==="
+          ls -la dist/ || true
+          echo ""
+          echo "=== 各引擎大小 ==="
+          for f in dist/*-engine.tar.gz; do
+            [ -f "$f" ] || continue
+            printf "%-28s %10d bytes\n" "$(basename $f)" "$(stat -c%s "$f")"
+          done
+          echo ""
+          echo "=== 缺失的引擎 ==="
+          for e in git sqlite nginx redis ssh vim sysbase nodejs php kotlin mysql ai aiagent mpweixin mpdouyin mpalipay apkbuild; do
+            [ -f "dist/$e-engine.tar.gz" ] || echo "  缺 $e"
+          done
+
+      - name: 发布到 Release
+        if: hashFiles('dist/*-engine.tar.gz') != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "引擎包 $TAG" --notes "编程专家 APP 引擎安装包"
+          fi
+          for f in dist/*-engine.tar.gz; do
+            [ -f "$f" ] || continue
+            echo "↑ $(basename $f)  $(stat -c%s "$f") bytes"
+            gh release upload "$TAG" "$f" --clobber && echo "   OK" || echo "   FAIL"
+          done
+          echo ""
+          echo "=== Release 资产 ==="
+          gh release view "$TAG"
+
+      - name: 生成汇总清单
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import os, json, hashlib, glob
+          out = {}
+          for f in sorted(glob.glob('dist/*-engine.tar.gz')):
+              n = os.path.basename(f).replace('-engine.tar.gz','')
+              h = hashlib.md5(open(f,'rb').read()).hexdigest()
+              info = {}
+              ip = f'dist/{n}-info.json'
+              if os.path.exists(ip):
+                  info = json.load(open(ip, encoding='utf-8'))
+              out[n] = {
+                  'file': os.path.basename(f),
+                  'size': os.path.getsize(f),
+                  'md5': h,
+                  'version': info.get('version',''),
+                  'desc': info.get('desc',''),
+                  'bin': info.get('bin',''),
+              }
+          json.dump(out, open('dist/summary.json','w',encoding='utf-8'),
+                    ensure_ascii=False, indent=1)
+          print(json.dumps(out, ensure_ascii=False, indent=1))
+          PY
+
+      - name: 提交清单回仓库
+        if: always()
+        run: |
+          mkdir -p built
+          cp dist/summary.json built/summary.json 2>/dev/null || echo '{}' > built/summary.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f built/summary.json
+          git commit -m "引擎包构建清单 $(date -u +%FT%TZ)" || echo "无变化"
+          git pull --rebase || true
+          git push || echo "push 失败"
