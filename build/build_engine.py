@@ -45,27 +45,25 @@ def log(*a):
 
 
 def fetch(url, dest, retries=6, quiet=False):
-    """带重试的下载"""
+    """带重试的下载 —— 走 curl，避免 python urllib 的 UA 被镜像站拦"""
     if os.path.exists(dest) and os.path.getsize(dest) > 0:
         return True
     os.makedirs(os.path.dirname(dest) or '.', exist_ok=True)
+    tmp = dest + '.part'
     for i in range(retries):
-        try:
-            req = urllib.request.Request(url, headers={'User-Agent': UA})
-            with urllib.request.urlopen(req, timeout=180) as r:
-                tmp = dest + '.part'
-                with open(tmp, 'wb') as f:
-                    while True:
-                        chunk = r.read(1 << 20)
-                        if not chunk:
-                            break
-                        f.write(chunk)
-                os.replace(tmp, dest)
+        r = subprocess.run(
+            ['curl', '-fL', '--retry', '3', '--retry-all-errors',
+             '--connect-timeout', '30', '--max-time', '1800',
+             '-o', tmp, url],
+            capture_output=True, text=True)
+        if r.returncode == 0 and os.path.exists(tmp) and os.path.getsize(tmp) > 0:
+            os.replace(tmp, dest)
             return True
-        except Exception as e:
-            if not quiet:
-                log(f'   重试 {i+1}/{retries}  {os.path.basename(dest)}  {e}')
-            time.sleep(3 + i * 2)
+        if not quiet:
+            log(f'   重试 {i+1}/{retries}  {os.path.basename(dest)}  rc={r.returncode} {r.stderr.strip()[:100]}')
+        if os.path.exists(tmp):
+            os.remove(tmp)
+        time.sleep(3 + i * 2)
     return False
 
 
