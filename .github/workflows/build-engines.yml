@@ -78,8 +78,36 @@ jobs:
           retention-days: 7
           compression-level: 0
 
+  # html / androidapp 不是 Termux 包，单独构建
+  extra:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 构建 html / androidapp
+        working-directory: build
+        run: |
+          python3 make_extra.py all
+          echo "--- 产物 ---"
+          ls -la out/
+
+      - name: 上传产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: pkg-extra
+          path: |
+            build/out/*-engine.tar.gz
+            build/out/*-info.json
+          retention-days: 7
+          compression-level: 0
+
   release:
-    needs: build
+    needs: [build, extra]
     if: always()
     runs-on: ubuntu-latest
     steps:
