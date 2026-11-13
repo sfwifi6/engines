@@ -1,3 +1,1 @@
-搬运任务触发时间：2026-11-13T03:58:40Z（第三次，带诊断）
-目标：测 coze 短链在 GitHub runner 上是否可达，结果写入 diag.txt
-说明：本文件仅用于触发 .github/workflows/fetch-engines.yml。
+run 4 at 2026-11-13T04:04Z - 逐项诊断下载与上传
