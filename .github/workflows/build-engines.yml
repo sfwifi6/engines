@@ -18,13 +18,13 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       max-parallel: 5
       matrix:
         engine:
-          - git
+          - rust
           - sqlite
           - nginx
           - redis
@@ -41,6 +41,7 @@ jobs:
           - mpdouyin
           - mpalipay
           - apkbuild
+          - git
 
     steps:
       - uses: actions/checkout@v4
@@ -100,11 +101,6 @@ jobs:
           for f in dist/*-engine.tar.gz; do
             [ -f "$f" ] || continue
             printf "%-28s %10d bytes\n" "$(basename $f)" "$(stat -c%s "$f")"
-          done
-          echo ""
-          echo "=== 缺失的引擎 ==="
-          for e in git sqlite nginx redis ssh vim sysbase nodejs php kotlin mysql ai aiagent mpweixin mpdouyin mpalipay apkbuild; do
-            [ -f "dist/$e-engine.tar.gz" ] || echo "  缺 $e"
           done
 
       - name: 发布到 Release
