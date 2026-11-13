@@ -1,22 +1,22 @@
-# 下载 2026-11-13T16:17:10Z
+# 下载 2026-11-13T16:31:21Z
 ↓ python-engine.tar.gz
-   OK  16648344 bytes  15s
+   OK  16648344 bytes  14s
 ↓ clang.p00
-   OK  94371840 bytes  82s
+   OK  94371840 bytes  72s
 ↓ clang.p01
-   OK  48548417 bytes  46s
+   OK  48548417 bytes  29s
    merge clang OK 142920257
 ↓ go.p00
-   OK  94371840 bytes  71s
+   OK  94371840 bytes  105s
 ↓ go.p01
-   OK  94371840 bytes  75s
+   OK  94371840 bytes  62s
 ↓ go.p02
    OK  11216989 bytes  11s
    merge golang OK 199960669
 ↓ jdk.p00
-   OK  94371840 bytes  84s
+   OK  94371840 bytes  60s
 ↓ jdk.p01
-   OK  38689024 bytes  32s
+   OK  38689024 bytes  27s
    merge openjdk OK 133060864
 
 ## 结果
@@ -25,7 +25,7 @@ golang-engine.tar.gz  199960669  7805fc09024b07f986c8f58dcc726c5c
 openjdk-engine.tar.gz  133060864  956241d3cf432260b4e822dc1a83d164
 python-engine.tar.gz  16648344  5c0749f7843000b1ecee176ff84575d9
 
-# 发布 2026-11-13T16:24:07Z  tag=v1
+# 发布 2026-11-13T16:37:41Z  tag=v1
 Release v1 已存在
 ↑ clang-engine.tar.gz  142920257 bytes
    OK
@@ -63,6 +63,7 @@ asset:	openjdk-engine.tar.gz
 asset:	php-engine.tar.gz
 asset:	python-engine.tar.gz
 asset:	redis-engine.tar.gz
+asset:	rust-engine.tar.gz
 asset:	sqlite-engine.tar.gz
 asset:	ssh-engine.tar.gz
 asset:	sysbase-engine.tar.gz
