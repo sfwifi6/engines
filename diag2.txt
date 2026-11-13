@@ -1,0 +1,55 @@
+# 下载 2026-11-13T04:04:34Z
+↓ python-engine.tar.gz
+   OK  16648344 bytes  15s
+↓ clang.p00
+   OK  94371840 bytes  77s
+↓ clang.p01
+   OK  48548417 bytes  33s
+   merge clang OK 142920257
+↓ go.p00
+   OK  94371840 bytes  59s
+↓ go.p01
+   OK  94371840 bytes  71s
+↓ go.p02
+   OK  11216989 bytes  12s
+   merge golang OK 199960669
+↓ jdk.p00
+   OK  94371840 bytes  76s
+↓ jdk.p01
+   OK  38689024 bytes  35s
+   merge openjdk OK 133060864
+
+## 结果
+clang-engine.tar.gz  142920257  8dd063983f4f12fb2d14d2a2252d9497
+golang-engine.tar.gz  199960669  7805fc09024b07f986c8f58dcc726c5c
+openjdk-engine.tar.gz  133060864  956241d3cf432260b4e822dc1a83d164
+python-engine.tar.gz  16648344  5c0749f7843000b1ecee176ff84575d9
+
+# 发布 2026-11-13T04:10:54Z  tag=v1
+创建 Release v1
+https://github.com/sfwifi6/engines/releases/tag/v1
+↑ clang-engine.tar.gz  142920257 bytes
+   OK
+↑ golang-engine.tar.gz  199960669 bytes
+   OK
+↑ openjdk-engine.tar.gz  133060864 bytes
+   OK
+↑ python-engine.tar.gz  16648344 bytes
+   OK
+
+## Release 资产
+title:	引擎包 v1
+tag:	v1
+draft:	false
+prerelease:	false
+immutable:	false
+author:	github-actions[bot]
+created:	2026-11-13T04:04:29Z
+published:	2026-11-13T04:10:55Z
+url:	https://github.com/sfwifi6/engines/releases/tag/v1
+asset:	clang-engine.tar.gz
+asset:	golang-engine.tar.gz
+asset:	openjdk-engine.tar.gz
+asset:	python-engine.tar.gz
+--
+编程专家 APP 语言引擎安装包（整包，不分卷，直接下）
