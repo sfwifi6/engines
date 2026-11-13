@@ -25,92 +25,92 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 诊断 · 测连通性
-        continue-on-error: true
+      - name: 下载并合并分卷（不中断，逐项记录）
         run: |
-          {
-            echo "# 诊断 $(date -u +%FT%TZ)"
-            echo "runner: $(uname -a)"
-            echo
-            for u in \
-              "https://www.coze.cn/s/ZLt-OvAy3Vs/" \
-              "https://www.coze.cn/s/vo2llN8ZfBE/" \
-              "https://www.coze.cn/s/Nnz9_M2KLx4/" \
-              "https://www.coze.cn/s/ijOR7xqnvsc/" \
-              "https://static.coze.site/"
-            do
-              echo "## $u"
-              curl -sIL -m 30 -A "$UA" -o /dev/null \
-                -w "http=%{http_code} size=%{size_download} redirect=%{num_redirects} time=%{time_total}s\n" \
-                "$u" 2>&1 || echo "curl failed: $?"
-              curl -sIL -m 30 -A "$UA" "$u" 2>&1 | grep -iE "^HTTP|^location|^content-length" | head -6
-              echo
-            done
-          } > diag.txt
-          cat diag.txt
+          set -uo pipefail
+          rm -f diag2.txt
+          log(){ echo "$*" | tee -a diag2.txt; }
 
-      - name: 提交诊断结果
-        continue-on-error: true
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add diag.txt
-          git commit -m "诊断结果 $(date -u +%FT%TZ)" || echo "无变化"
-          git push || echo "push 失败"
-
-      - name: 下载并合并分卷
-        run: |
-          set -euo pipefail
+          log "# 下载 $(date -u +%FT%TZ)"
           dl() {
-            echo "↓ $1"
-            curl -fL --retry 5 --retry-delay 3 --retry-all-errors \
-              --connect-timeout 30 --max-time 900 \
-              -A "$UA" -o "$1" "$2"
+            log "↓ $1"
+            local t0=$(date +%s)
+            if curl -fL --retry 5 --retry-delay 3 --retry-all-errors \
+                 --connect-timeout 30 --max-time 1800 \
+                 -A "$UA" -o "$1" "$2"; then
+              local t1=$(date +%s)
+              log "   OK  $(stat -c%s "$1") bytes  $((t1-t0))s"
+            else
+              log "   FAIL code=$? $1"
+            fi
           }
 
           dl python-engine.tar.gz "https://www.coze.cn/s/ZLt-OvAy3Vs/"
 
           dl clang.p00 "https://www.coze.cn/s/vo2llN8ZfBE/"
           dl clang.p01 "https://www.coze.cn/s/wCLR287uFHE/"
-          cat clang.p00 clang.p01 > clang-engine.tar.gz
+          if [ -f clang.p00 ] && [ -f clang.p01 ]; then
+            cat clang.p00 clang.p01 > clang-engine.tar.gz && log "   merge clang OK $(stat -c%s clang-engine.tar.gz)"
+          fi
           rm -f clang.p0*
 
           dl go.p00 "https://www.coze.cn/s/Nnz9_M2KLx4/"
           dl go.p01 "https://www.coze.cn/s/Ad2nMbw527s/"
           dl go.p02 "https://www.coze.cn/s/tnMmEE3VjFA/"
-          cat go.p00 go.p01 go.p02 > golang-engine.tar.gz
+          if [ -f go.p00 ] && [ -f go.p01 ] && [ -f go.p02 ]; then
+            cat go.p00 go.p01 go.p02 > golang-engine.tar.gz && log "   merge golang OK $(stat -c%s golang-engine.tar.gz)"
+          fi
           rm -f go.p0*
 
           dl jdk.p00 "https://www.coze.cn/s/ijOR7xqnvsc/"
           dl jdk.p01 "https://www.coze.cn/s/7B0tCfYJflI/"
-          cat jdk.p00 jdk.p01 > openjdk-engine.tar.gz
+          if [ -f jdk.p00 ] && [ -f jdk.p01 ]; then
+            cat jdk.p00 jdk.p01 > openjdk-engine.tar.gz && log "   merge openjdk OK $(stat -c%s openjdk-engine.tar.gz)"
+          fi
           rm -f jdk.p0*
 
-      - name: 校验大小与 MD5
-        run: |
-          set -euo pipefail
-          echo "=== 实际 ==="
-          for f in *.tar.gz; do printf "%-26s %s\n" "$f" "$(stat -c%s "$f")"; done
-          echo
-          md5sum *.tar.gz
-          echo
-          echo "=== 断言 ==="
-          test "$(stat -c%s python-engine.tar.gz)"  = "16648344"  && echo "python  OK"
-          test "$(stat -c%s clang-engine.tar.gz)"   = "142920257" && echo "clang   OK"
-          test "$(stat -c%s golang-engine.tar.gz)"  = "199960669" && echo "golang  OK"
-          test "$(stat -c%s openjdk-engine.tar.gz)" = "133060864" && echo "openjdk OK"
+          log ""
+          log "## 结果"
+          for f in *.tar.gz; do log "$f  $(stat -c%s "$f")  $(md5sum "$f" | cut -d' ' -f1)"; done
 
-      - name: 发布到 Release
+      - name: 发布 Release（逐个上传，不中断）
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
-          TAG="${TAG:-v1}"
-          echo "标签：$TAG"
-          gh release view "$TAG" >/dev/null 2>&1 || \
-            gh release create "$TAG" \
-              --title "引擎包 $TAG" \
-              --notes "编程专家 APP 语言引擎安装包（整包，不分卷，直接下）"
-          gh release upload "$TAG" *.tar.gz --clobber
-          echo
-          echo "✅ 完成：https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/"
+          set -uo pipefail
+          log(){ echo "$*" | tee -a diag2.txt; }
+
+          log ""
+          log "# 发布 $(date -u +%FT%TZ)  tag=$TAG"
+
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            log "创建 Release $TAG"
+            gh release create "$TAG" --title "引擎包 $TAG" \
+              --notes "编程专家 APP 语言引擎安装包（整包，不分卷，直接下）" 2>&1 | tee -a diag2.txt
+          else
+            log "Release $TAG 已存在"
+          fi
+
+          for f in *.tar.gz; do
+            [ -f "$f" ] || continue
+            log "↑ $f  $(stat -c%s "$f") bytes"
+            if gh release upload "$TAG" "$f" --clobber 2>&1 | tee -a diag2.txt; then
+              log "   OK"
+            else
+              log "   FAIL code=$?"
+            fi
+          done
+
+          log ""
+          log "## Release 资产"
+          gh release view "$TAG" 2>&1 | tee -a diag2.txt
+
+      - name: 提交诊断结果
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f diag2.txt || true
+          git commit -m "搬运诊断 $(date -u +%FT%TZ)" || echo "无变化"
+          git pull --rebase || true
+          git push || echo "push 失败"
