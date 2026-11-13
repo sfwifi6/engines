@@ -15,6 +15,9 @@
     ./manifest.json
     ./data/data/com.termux/files/usr/bin/...
     ./data/data/com.termux/files/usr/lib/...
+
+注意：APP 启动自检要求每个引擎包必须有 usr/bin/proot，
+      所以 ALWAYS 里的包会强制注入到每个引擎。
 """
 import os
 import sys
@@ -31,6 +34,9 @@ MIRROR = os.environ.get('TERMUX_MIRROR',
 ARCH = os.environ.get('TERMUX_ARCH', 'aarch64')
 PREFIX = '/data/data/com.termux/files/usr'
 UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/131.0 Safari/537.36'
+
+# APP 靠 proot 把引擎挂进自己的运行环境，每个包都必须带
+ALWAYS = ['proot']
 
 # 这些是 Termux 运行环境专属，APP 里没有对应 socket，装了也没用还会让依赖树膨胀
 SKIP = {'termux-am', 'termux-am-socket', 'termux-exec',
@@ -259,7 +265,8 @@ def main():
     log('=' * 60)
 
     idx = load_index()
-    pkgs, missing = resolve(cfg['pkgs'], idx)
+    top = list(cfg['pkgs']) + [p for p in ALWAYS if p not in cfg['pkgs']]
+    pkgs, missing = resolve(top, idx)
     if missing:
         log(f'⚠ 缺失包（已跳过）：{missing}')
     log(f'依赖解析完成，共 {len(pkgs)} 个包')
@@ -282,6 +289,12 @@ def main():
     if not os.path.isdir(usr):
         sys.exit(f'解包后找不到 prefix 目录 {usr}')
 
+    # 硬校验：APP 自检要求 proot 必须在
+    proot = os.path.join(usr, 'bin', 'proot')
+    if not os.path.exists(proot):
+        sys.exit(f'✗ 致命：{name} 包里没有 usr/bin/proot，APP 会判为损坏')
+    log(f'✓ proot 就位 {os.path.getsize(proot)} 字节')
+
     man = make_manifest(name, cfg, pkgs, idx)
     out = pack(name)
 
@@ -297,6 +310,7 @@ def main():
         'bin': man['bin'],
         'packages': pkgs,
         'failed': fail,
+        'has_proot': True,
     }
     with open(f'{name}-info.json', 'w', encoding='utf-8') as f:
         json.dump(info, f, ensure_ascii=False, indent=1)
