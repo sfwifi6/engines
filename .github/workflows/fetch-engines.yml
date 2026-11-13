@@ -1,0 +1,82 @@
+name: 搬引擎包到 Releases
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release 标签（建议 v1）'
+        required: true
+        default: 'v1'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 下载并合并分卷
+        run: |
+          set -euo pipefail
+          dl() { echo "↓ $1"; curl -fL --retry 3 --retry-delay 2 --connect-timeout 20 -o "$1" "$2"; }
+
+          # ---- python（16.6MB 单包）----
+          dl python-engine.tar.gz "https://www.coze.cn/s/ZLt-OvAy3Vs/"
+
+          # ---- clang（2 卷 → 142920257）----
+          dl clang.p00 "https://www.coze.cn/s/vo2llN8ZfBE/"
+          dl clang.p01 "https://www.coze.cn/s/wCLR287uFHE/"
+          cat clang.p00 clang.p01 > clang-engine.tar.gz
+          rm -f clang.p0*
+
+          # ---- golang（3 卷 → 199960669）----
+          dl go.p00 "https://www.coze.cn/s/Nnz9_M2KLx4/"
+          dl go.p01 "https://www.coze.cn/s/Ad2nMbw527s/"
+          dl go.p02 "https://www.coze.cn/s/tnMmEE3VjFA/"
+          cat go.p00 go.p01 go.p02 > golang-engine.tar.gz
+          rm -f go.p0*
+
+          # ---- openjdk（2 卷 → 133060864）----
+          dl jdk.p00 "https://www.coze.cn/s/ijOR7xqnvsc/"
+          dl jdk.p01 "https://www.coze.cn/s/7B0tCfYJflI/"
+          cat jdk.p00 jdk.p01 > openjdk-engine.tar.gz
+          rm -f jdk.p0*
+
+      - name: 校验大小与 MD5
+        run: |
+          set -euo pipefail
+          echo "=== 实际 ==="
+          for f in *.tar.gz; do printf "%-26s %s\n" "$f" "$(stat -c%s "$f")"; done
+          echo
+          echo "=== 期望 ==="
+          cat <<'EOF'
+python-engine.tar.gz       16648344
+clang-engine.tar.gz        142920257
+golang-engine.tar.gz       199960669
+openjdk-engine.tar.gz      133060864
+EOF
+          echo
+          md5sum *.tar.gz
+          echo
+          echo "=== 逐项断言 ==="
+          test "$(stat -c%s python-engine.tar.gz)"  = "16648344"  && echo "python  OK"
+          test "$(stat -c%s clang-engine.tar.gz)"   = "142920257" && echo "clang   OK"
+          test "$(stat -c%s golang-engine.tar.gz)"  = "199960669" && echo "golang  OK"
+          test "$(stat -c%s openjdk-engine.tar.gz)" = "133060864" && echo "openjdk OK"
+
+      - name: 发布到 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TAG="${{ inputs.tag }}"
+          gh release view "$TAG" >/dev/null 2>&1 || \
+            gh release create "$TAG" \
+              --title "引擎包 $TAG" \
+              --notes "编程专家 APP 语言引擎安装包（整包，不分卷，直接下）"
+          gh release upload "$TAG" *.tar.gz --clobber
+          echo
+          echo "✅ 完成。APP「引擎源地址」填："
+          echo "https://github.com/${{ github.repository }}/releases/download/$TAG/"
