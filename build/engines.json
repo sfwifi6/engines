@@ -1,0 +1,96 @@
+{
+  "_说明": "每个引擎由哪些 Termux 顶层包组成。构建脚本会自动递归解析依赖。",
+  "_mirror": "https://mirrors.tuna.tsinghua.edu.cn/termux/apt/termux-main",
+  "engines": {
+    "git": {
+      "pkgs": ["git"],
+      "bin": "bin/git",
+      "desc": "Git 2.56 分布式版本管理"
+    },
+    "sqlite": {
+      "pkgs": ["sqlite"],
+      "bin": "bin/sqlite3",
+      "desc": "SQLite 3.54 单文件数据库 + 命令行"
+    },
+    "nginx": {
+      "pkgs": ["nginx"],
+      "bin": "bin/nginx",
+      "desc": "Nginx 1.31 Web 服务器 + 反向代理"
+    },
+    "redis": {
+      "pkgs": ["redis"],
+      "bin": "bin/redis-server",
+      "desc": "Redis 8 缓存 / 消息队列"
+    },
+    "ssh": {
+      "pkgs": ["openssh"],
+      "bin": "bin/ssh",
+      "desc": "OpenSSH 10.6 客户端 + 服务端"
+    },
+    "vim": {
+      "pkgs": ["neovim"],
+      "bin": "bin/nvim",
+      "desc": "Neovim 0.12 终端编辑器"
+    },
+    "sysbase": {
+      "pkgs": ["coreutils", "busybox", "curl", "tar", "unzip", "wget", "jq", "tree", "htop", "less", "nano", "rsync", "tmux", "findutils", "grep", "sed", "gawk", "which", "procps"],
+      "bin": "bin/ls",
+      "desc": "Linux 系统工具集（busybox+curl+coreutils+常用命令）"
+    },
+    "nodejs": {
+      "pkgs": ["nodejs-lts"],
+      "bin": "bin/node",
+      "desc": "Node.js 24 LTS 运行时"
+    },
+    "php": {
+      "pkgs": ["php", "php-fpm"],
+      "bin": "bin/php",
+      "desc": "PHP 8.5 运行时 + php-fpm"
+    },
+    "kotlin": {
+      "pkgs": ["kotlin"],
+      "bin": "bin/kotlin",
+      "desc": "Kotlin 2.4 编译器（自带 JDK 21）"
+    },
+    "mysql": {
+      "pkgs": ["mariadb"],
+      "bin": "bin/mariadb",
+      "desc": "MariaDB 13 数据库服务"
+    },
+    "rust": {
+      "pkgs": ["rust"],
+      "bin": "bin/rustc",
+      "desc": "Rust 1.99 + cargo（系统级/高性能）"
+    },
+    "ai": {
+      "pkgs": ["python"],
+      "bin": "bin/python",
+      "desc": "AI 应用开发（Python 3.14 + 在线安装 openai/langchain）"
+    },
+    "aiagent": {
+      "pkgs": ["python"],
+      "bin": "bin/python",
+      "desc": "AI Agent 框架（LangGraph/CrewAI 运行环境）"
+    },
+    "mpweixin": {
+      "pkgs": ["nodejs-lts"],
+      "bin": "bin/node",
+      "desc": "微信小程序（wxml/wxss/js + miniprogram-ci）"
+    },
+    "mpdouyin": {
+      "pkgs": ["nodejs-lts"],
+      "bin": "bin/node",
+      "desc": "抖音小程序（ttml/ttss/js）"
+    },
+    "mpalipay": {
+      "pkgs": ["nodejs-lts"],
+      "bin": "bin/node",
+      "desc": "支付宝小程序（axml/acss/js）"
+    },
+    "apkbuild": {
+      "pkgs": ["openjdk-17"],
+      "bin": "bin/java",
+      "desc": "APK 打包工具链（JDK 17 + 签名）"
+    }
+  }
+}
