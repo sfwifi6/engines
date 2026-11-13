@@ -1,6 +1,10 @@
 name: 搬引擎包到 Releases
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'trigger/**'
   workflow_dispatch:
     inputs:
       tag:
@@ -10,6 +14,9 @@ on:
 
 permissions:
   contents: write
+
+env:
+  TAG: ${{ inputs.tag || 'v1' }}
 
 jobs:
   fetch:
@@ -71,7 +78,8 @@ EOF
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          TAG="${{ inputs.tag }}"
+          TAG="${TAG:-v1}"
+          echo "标签：$TAG"
           gh release view "$TAG" >/dev/null 2>&1 || \
             gh release create "$TAG" \
               --title "引擎包 $TAG" \
@@ -79,4 +87,4 @@ EOF
           gh release upload "$TAG" *.tar.gz --clobber
           echo
           echo "✅ 完成。APP「引擎源地址」填："
-          echo "https://github.com/${{ github.repository }}/releases/download/$TAG/"
+          echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/"
