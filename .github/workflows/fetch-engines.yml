@@ -17,6 +17,7 @@ permissions:
 
 env:
   TAG: ${{ inputs.tag || 'v1' }}
+  UA: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36'
 
 jobs:
   fetch:
@@ -24,28 +25,62 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: 诊断 · 测连通性
+        continue-on-error: true
+        run: |
+          {
+            echo "# 诊断 $(date -u +%FT%TZ)"
+            echo "runner: $(uname -a)"
+            echo
+            for u in \
+              "https://www.coze.cn/s/ZLt-OvAy3Vs/" \
+              "https://www.coze.cn/s/vo2llN8ZfBE/" \
+              "https://www.coze.cn/s/Nnz9_M2KLx4/" \
+              "https://www.coze.cn/s/ijOR7xqnvsc/" \
+              "https://static.coze.site/"
+            do
+              echo "## $u"
+              curl -sIL -m 30 -A "$UA" -o /dev/null \
+                -w "http=%{http_code} size=%{size_download} redirect=%{num_redirects} time=%{time_total}s\n" \
+                "$u" 2>&1 || echo "curl failed: $?"
+              curl -sIL -m 30 -A "$UA" "$u" 2>&1 | grep -iE "^HTTP|^location|^content-length" | head -6
+              echo
+            done
+          } > diag.txt
+          cat diag.txt
+
+      - name: 提交诊断结果
+        continue-on-error: true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add diag.txt
+          git commit -m "诊断结果 $(date -u +%FT%TZ)" || echo "无变化"
+          git push || echo "push 失败"
+
       - name: 下载并合并分卷
         run: |
           set -euo pipefail
-          dl() { echo "↓ $1"; curl -fL --retry 3 --retry-delay 2 --connect-timeout 20 -o "$1" "$2"; }
+          dl() {
+            echo "↓ $1"
+            curl -fL --retry 5 --retry-delay 3 --retry-all-errors \
+              --connect-timeout 30 --max-time 900 \
+              -A "$UA" -o "$1" "$2"
+          }
 
-          # ---- python（16.6MB 单包）----
           dl python-engine.tar.gz "https://www.coze.cn/s/ZLt-OvAy3Vs/"
 
-          # ---- clang（2 卷 → 142920257）----
           dl clang.p00 "https://www.coze.cn/s/vo2llN8ZfBE/"
           dl clang.p01 "https://www.coze.cn/s/wCLR287uFHE/"
           cat clang.p00 clang.p01 > clang-engine.tar.gz
           rm -f clang.p0*
 
-          # ---- golang（3 卷 → 199960669）----
           dl go.p00 "https://www.coze.cn/s/Nnz9_M2KLx4/"
           dl go.p01 "https://www.coze.cn/s/Ad2nMbw527s/"
           dl go.p02 "https://www.coze.cn/s/tnMmEE3VjFA/"
           cat go.p00 go.p01 go.p02 > golang-engine.tar.gz
           rm -f go.p0*
 
-          # ---- openjdk（2 卷 → 133060864）----
           dl jdk.p00 "https://www.coze.cn/s/ijOR7xqnvsc/"
           dl jdk.p01 "https://www.coze.cn/s/7B0tCfYJflI/"
           cat jdk.p00 jdk.p01 > openjdk-engine.tar.gz
@@ -57,17 +92,9 @@ jobs:
           echo "=== 实际 ==="
           for f in *.tar.gz; do printf "%-26s %s\n" "$f" "$(stat -c%s "$f")"; done
           echo
-          echo "=== 期望 ==="
-          cat <<'EOF'
-python-engine.tar.gz       16648344
-clang-engine.tar.gz        142920257
-golang-engine.tar.gz       199960669
-openjdk-engine.tar.gz      133060864
-EOF
-          echo
           md5sum *.tar.gz
           echo
-          echo "=== 逐项断言 ==="
+          echo "=== 断言 ==="
           test "$(stat -c%s python-engine.tar.gz)"  = "16648344"  && echo "python  OK"
           test "$(stat -c%s clang-engine.tar.gz)"   = "142920257" && echo "clang   OK"
           test "$(stat -c%s golang-engine.tar.gz)"  = "199960669" && echo "golang  OK"
@@ -86,5 +113,4 @@ EOF
               --notes "编程专家 APP 语言引擎安装包（整包，不分卷，直接下）"
           gh release upload "$TAG" *.tar.gz --clobber
           echo
-          echo "✅ 完成。APP「引擎源地址」填："
-          echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/"
+          echo "✅ 完成：https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/"
