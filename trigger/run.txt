@@ -1,0 +1,3 @@
+搬运任务触发时间：2026-11-13T03:50:30Z
+目标：从旧 coze 短链下载 4 个引擎包 → 合并分卷 → 校验大小/MD5 → 发布到 Release v1
+说明：本文件仅用于触发 .github/workflows/fetch-engines.yml，内容不参与打包。
