@@ -1,0 +1,71 @@
+{
+  "_说明": "引擎清单。base 换成你自己的地址；files 里写 Releases 上的文件名。GitHub 单文件上限 2GB，整包传，不用分卷。",
+  "base": "https://github.com/sfwifi6/engines/releases/download/v1/",
+  "engines": {
+    "python": {
+      "name": "Python 3.14 + LSP 网关",
+      "size": 16648344,
+      "md5": "5c0749f7843000b1ecee176ff84575d9",
+      "files": ["python-engine.tar.gz"],
+      "ready": true
+    },
+    "clang": {
+      "name": "Clang 21 全套 C/C++ 工具链",
+      "size": 142920257,
+      "md5": "8dd063983f4f12fb2d14d2a2252d9497",
+      "files": ["clang-engine.tar.gz"],
+      "ready": true,
+      "note": "原来切 2 卷，现在整包"
+    },
+    "golang": {
+      "name": "Go 官方工具链",
+      "size": 199960669,
+      "md5": "7805fc09024b07f986c8f58dcc726c5c",
+      "files": ["golang-engine.tar.gz"],
+      "ready": true,
+      "note": "原来切 3 卷，现在整包"
+    },
+    "openjdk": {
+      "name": "OpenJDK 17 LTS",
+      "size": 133060864,
+      "md5": "956241d3cf432260b4e822dc1a83d164",
+      "files": ["openjdk-engine.tar.gz"],
+      "ready": true,
+      "note": "原来切 2 卷，现在整包"
+    },
+    "nodejs": {
+      "name": "Node.js 运行时",
+      "size": 38716267,
+      "md5": "a64334b0029280fa7f43af45dd3d241b",
+      "files": ["nodejs-engine.tar.gz"],
+      "ready": false,
+      "note": "原 Pages 站点已 402 停用，需重新打包"
+    },
+    "apkbuild": {
+      "name": "APK 打包工具链",
+      "size": 22944632,
+      "md5": "b1e0e01618683d1821a3f4ee1da38a96",
+      "files": ["apkbuild-engine.tar.gz"],
+      "ready": false,
+      "note": "原 Pages 站点已 402 停用，需重新打包"
+    },
+    "git": { "name": "Git 2.45", "size": 12582912, "files": ["git-engine.tar.gz"], "ready": false },
+    "php": { "name": "PHP 8.3", "size": 26214400, "files": ["php-engine.tar.gz"], "ready": false },
+    "kotlin": { "name": "Kotlin 2.0", "size": 83886080, "files": ["kotlin-engine.tar.gz"], "ready": false },
+    "mysql": { "name": "MariaDB 10.11", "size": 62914560, "files": ["mysql-engine.tar.gz"], "ready": false },
+    "rust": { "name": "Rust 1.82 + cargo", "size": 367001600, "files": ["rust-engine.tar.gz"], "ready": false },
+    "sysbase": { "name": "Linux 系统工具集", "size": 8388608, "files": ["sysbase-engine.tar.gz"], "ready": false },
+    "sqlite": { "name": "SQLite 3", "size": 2097152, "files": ["sqlite-engine.tar.gz"], "ready": false },
+    "nginx": { "name": "Nginx 1.24", "size": 5242880, "files": ["nginx-engine.tar.gz"], "ready": false },
+    "redis": { "name": "Redis 7", "size": 10485760, "files": ["redis-engine.tar.gz"], "ready": false },
+    "ssh": { "name": "OpenSSH", "size": 6291456, "files": ["ssh-engine.tar.gz"], "ready": false },
+    "vim": { "name": "Neovim", "size": 12582912, "files": ["vim-engine.tar.gz"], "ready": false },
+    "mpweixin": { "name": "微信小程序", "size": 31457280, "files": ["mpweixin-engine.tar.gz"], "ready": false },
+    "mpdouyin": { "name": "抖音小程序", "size": 31457280, "files": ["mpdouyin-engine.tar.gz"], "ready": false },
+    "mpalipay": { "name": "支付宝小程序", "size": 31457280, "files": ["mpalipay-engine.tar.gz"], "ready": false },
+    "ai": { "name": "AI 应用开发 SDK", "size": 47185920, "files": ["ai-engine.tar.gz"], "ready": false },
+    "aiagent": { "name": "AI Agent 框架", "size": 36700160, "files": ["aiagent-engine.tar.gz"], "ready": false },
+    "html": { "name": "HTML 离线库", "size": 3145728, "files": ["html-engine.tar.gz"], "ready": false },
+    "androidapp": { "name": "Android 工程模板", "size": 2097152, "files": ["androidapp-engine.tar.gz"], "ready": false }
+  }
+}
