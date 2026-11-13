@@ -1,0 +1,36 @@
+# 诊断 2026-11-13T03:58:36Z
+runner: Linux runnervmccnms 7.0.0-1019-azure #20-Ubuntu SMP PREEMPT Mon Oct 19 22:41:16 UTC 2026 x86_64 GNU/Linux
+
+## https://www.coze.cn/s/ZLt-OvAy3Vs/
+http=200 size=0 redirect=1 time=1.596801s
+HTTP/2 302 
+location: https://static.coze.site/749247564879172_0-data_volume/7701793382745506090-files/%E6%89%80%E6%9C%89%E5%AF%B9%E8%AF%9D/%E4%B8%BB%E5%AF%B9%E8%AF%9D/%E4%B8%89%E6%96%B9%E6%96%87%E4%BB%B6/python-lsp.tar.gz?sign=1797133723-7f2b6554ba-0-d87b83fd039741949087d15b80b673c03666b33a0a3c5ba410719d6de1576d1d
+HTTP/1.1 200 OK
+Content-Length: 16648344
+
+## https://www.coze.cn/s/vo2llN8ZfBE/
+http=200 size=0 redirect=1 time=1.350850s
+HTTP/2 302 
+location: https://static.coze.site/749247564879172_0-data_volume/7701793382745506090-files/%E6%89%80%E6%9C%89%E5%AF%B9%E8%AF%9D/%E4%B8%BB%E5%AF%B9%E8%AF%9D/%E4%B8%89%E6%96%B9%E6%96%87%E4%BB%B6/clang.part00?sign=1797022596-fae341a93f-0-85cb857d0d6236d515f6dd5ca51a8943ce56a4405104e49004151ed5417287f3
+HTTP/1.1 200 OK
+Content-Length: 94371840
+
+## https://www.coze.cn/s/Nnz9_M2KLx4/
+http=200 size=0 redirect=1 time=1.216728s
+HTTP/2 302 
+location: https://static.coze.site/749247564879172_0-data_volume/7701793382745506090-files/%E6%89%80%E6%9C%89%E5%AF%B9%E8%AF%9D/%E4%B8%BB%E5%AF%B9%E8%AF%9D/%E4%B8%89%E6%96%B9%E6%96%87%E4%BB%B6/golang.part00?sign=1797022506-0788885f47-0-a8f0ff42fb2c1513060cce8e95fe725ac712d1cc2edbf859cc9194bd5af22a53
+HTTP/1.1 200 OK
+Content-Length: 94371840
+
+## https://www.coze.cn/s/ijOR7xqnvsc/
+http=200 size=0 redirect=1 time=1.424512s
+HTTP/2 302 
+location: https://static.coze.site/749247564879172_0-data_volume/7701793382745506090-files/%E6%89%80%E6%9C%89%E5%AF%B9%E8%AF%9D/%E4%B8%BB%E5%AF%B9%E8%AF%9D/%E4%B8%89%E6%96%B9%E6%96%87%E4%BB%B6/openjdk.part00?sign=1797022465-054939d71d-0-dedddad4897910cad96e536270c8714217d9bd746c03ab6f45a4dc0f2464036d
+HTTP/1.1 200 OK
+Content-Length: 94371840
+
+## https://static.coze.site/
+http=403 size=0 redirect=0 time=0.626442s
+HTTP/1.1 403 Forbidden
+Content-Length: 17
+
