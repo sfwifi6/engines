@@ -28,7 +28,7 @@ jobs:
     steps:
       - name: 下载原包
         run: |
-          set -uo pipefail
+          set -u
           URL="https://github.com/sfwifi6/engines/releases/download/${TAG}/${{ matrix.engine }}-engine.tar.gz"
           echo "下载 $URL"
           curl -sL --retry 3 --retry-delay 3 -o old.tar.gz "$URL"
@@ -37,7 +37,7 @@ jobs:
 
       - name: 解压
         run: |
-          set -uo pipefail
+          set -u
           mkdir -p work
           tar -xzf old.tar.gz -C work
           echo "--- 顶层 ---"
@@ -46,11 +46,11 @@ jobs:
           head -c 400 work/manifest.json || true
           echo ""
           echo "--- 最长路径 ---"
-          find work \( -type f -o -type l \) | awk '{print length($0), $0}' | sort -rn | head -3
+          find work \( -type f -o -type l \) | awk '{print length($0), $0}' | sort -rn | head -3 || true
 
       - name: 重打包
         run: |
-          set -uo pipefail
+          set -u
           cd work
           if tar --format=ustar --mtime='2026-01-01 00:00:00' --owner=0 --group=0 --numeric-owner -czf ../new.tar.gz ./manifest.json ./data 2>../err.txt; then
             echo "格式: ustar"
@@ -70,7 +70,7 @@ jobs:
 
       - name: 校验新包
         run: |
-          set -uo pipefail
+          set -u
           echo "--- 条目数 ---"
           tar -tzf new.tar.gz | wc -l
           echo "--- 扩展头检查 ---"
@@ -84,7 +84,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -uo pipefail
+          set -u
           NEW="${{ matrix.engine }}-engine-ustar.tar.gz"
           cp new.tar.gz "$NEW"
           echo "上传 $NEW  ($SIZE bytes, md5=$MD5)"
@@ -92,3 +92,27 @@ jobs:
           echo "=== 上传完成 ==="
           gh release view "$TAG" --json assets --jq '.assets[] | select(.name|contains("ustar")) | "\(.name)  \(.size) bytes"'
           echo "### ${{ matrix.engine }} 到 $NEW  size=$SIZE  md5=$MD5" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 失败时记录日志到仓库
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -u
+          mkdir -p built
+          F="built/repack-fail-${{ matrix.engine }}.txt"
+          {
+            echo "=== ${{ matrix.engine }} 重打包失败 ==="
+            echo "--- err.txt ---"
+            cat err.txt 2>/dev/null || echo "(无)"
+            echo "--- 目录 ---"
+            ls -l
+            echo "--- work 顶层 ---"
+            ls work 2>/dev/null || echo "(无 work)"
+          } > "$F"
+          git init -q . 2>/dev/null || true
+          git config user.email "actions@github.com"
+          git config user.name "actions"
+          git add -f "$F"
+          git commit -qm "log: ${{ matrix.engine }} 重打包失败日志" || true
+          git push -q "https://x-access-token:${GH_TOKEN}@github.com/sfwifi6/engines.git" HEAD:main || echo "推送日志失败"
