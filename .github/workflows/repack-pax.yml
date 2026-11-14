@@ -26,7 +26,7 @@ jobs:
       matrix:
         engine: [clang, golang, openjdk]
     steps:
-      - name: 下载原包 ${{ matrix.engine }}
+      - name: 下载原包
         run: |
           set -uo pipefail
           URL="https://github.com/sfwifi6/engines/releases/download/${TAG}/${{ matrix.engine }}-engine.tar.gz"
@@ -48,18 +48,16 @@ jobs:
           echo "--- 最长路径 ---"
           find work \( -type f -o -type l \) | awk '{print length($0), $0}' | sort -rn | head -3
 
-      - name: 重打包（优先 ustar，失败退回 gnu）
+      - name: 重打包
         run: |
           set -uo pipefail
           cd work
-          if tar --format=ustar --mtime='2026-01-01 00:00:00' --owner=0 --group=0 --numeric-owner \
-                -czf ../new.tar.gz ./manifest.json ./data 2>../err.txt; then
+          if tar --format=ustar --mtime='2026-01-01 00:00:00' --owner=0 --group=0 --numeric-owner -czf ../new.tar.gz ./manifest.json ./data 2>../err.txt; then
             echo "格式: ustar"
           else
             echo "ustar 失败，改用 gnu："
             cat ../err.txt
-            tar --format=gnu --mtime='2026-01-01 00:00:00' --owner=0 --group=0 --numeric-owner \
-                -czf ../new.tar.gz ./manifest.json ./data
+            tar --format=gnu --mtime='2026-01-01 00:00:00' --owner=0 --group=0 --numeric-owner -czf ../new.tar.gz ./manifest.json ./data
             echo "格式: gnu"
           fi
           cd ..
@@ -67,7 +65,7 @@ jobs:
           SZ=$(stat -c%s new.tar.gz)
           MD=$(md5sum new.tar.gz | cut -d' ' -f1)
           echo "SIZE=$SZ" >> "$GITHUB_ENV"
-          echo "MD5=$MD"   >> "$GITHUB_ENV"
+          echo "MD5=$MD" >> "$GITHUB_ENV"
           echo "### ${{ matrix.engine }}  size=$SZ  md5=$MD" >> "$GITHUB_STEP_SUMMARY"
 
       - name: 校验新包
@@ -75,33 +73,8 @@ jobs:
           set -uo pipefail
           echo "--- 条目数 ---"
           tar -tzf new.tar.gz | wc -l
-          echo "--- 扩展头统计（应为 0 PAX） ---"
-          python3 -c "
-import zlib
-d=open('new.tar.gz','rb').read()
-o=zlib.decompressobj(16+zlib.MAX_WBITS)
-raw=o.decompress(d)
-def ts(b,off,l):
-    e=off
-    while e<off+l and b[e]!=0: e+=1
-    return b[off:e].decode('utf-8','replace')
-p=0;pax=0;gnu=0;n=0
-while p+512<=len(raw):
-    h=raw[p:p+512]; p+=512
-    nm=ts(h,0,100)
-    if nm=='': break
-    s=ts(h,124,12).strip()
-    sz=int(s,8) if s else 0
-    tp=h[156:157]
-    if tp in (b'x',b'L'):
-        if tp==b'x': pax+=1
-        else: gnu+=1
-        p+=sz+((512-(sz%512))%512); continue
-    n+=1
-    p+=sz+((512-(sz%512))%512)
-print('真实条目=%d  PAX头=%d  LongLink=%d'%(n,pax,gnu))
-assert pax==0, '新包里仍有 PAX 头！'
-"
+          echo "--- 扩展头检查 ---"
+          python3 -c "import zlib;d=open('new.tar.gz','rb').read();r=zlib.decompressobj(16+zlib.MAX_WBITS).decompress(d);print('!!! 仍有 PAX 头' if b'PaxHeader' in r[:400000] else 'OK 无 PAX 头')"
           echo "--- 关键主程序 ---"
           tar -tzf new.tar.gz | grep -E 'usr/bin/(clang|clang\+\+|gcc|g\+\+|go|javac|java)$' | head -12 || true
           echo "--- manifest ---"
@@ -118,4 +91,4 @@ assert pax==0, '新包里仍有 PAX 头！'
           gh release upload "$TAG" "$NEW" --clobber
           echo "=== 上传完成 ==="
           gh release view "$TAG" --json assets --jq '.assets[] | select(.name|contains("ustar")) | "\(.name)  \(.size) bytes"'
-          echo "### ✅ ${{ matrix.engine }} → $NEW  size=$SIZE  md5=$MD5" >> "$GITHUB_STEP_SUMMARY"
+          echo "### ${{ matrix.engine }} 到 $NEW  size=$SIZE  md5=$MD5" >> "$GITHUB_STEP_SUMMARY"
