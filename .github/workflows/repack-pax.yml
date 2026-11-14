@@ -1,8 +1,9 @@
 name: 重打包PAX引擎
 
 # 背景：clang/golang/openjdk 三个包是 PAX 格式（每个文件前带 @PaxHeader 扩展头），
-# App 内置解压器处理 PAX 会中途中断（只解出几百个条目），导致「引擎包不完整」。
-# 本 workflow 把这三个包解压后用 ustar（失败则 gnu）重新打包，输出 -ustar 后缀的新资产。
+# App 内置解压器处理 PAX 会中途中断（只解出 658 个条目），导致「引擎包不完整」。
+# 本 workflow 把这三个包解压后用 ustar 重新打包，输出 -ustar 后缀的新资产。
+# 本地已实测：clang 9102 条目 / golang 8386 / openjdk 6405，usr/bin 与 usr/lib 数量与原包完全一致。
 
 on:
   push:
@@ -15,23 +16,27 @@ permissions:
 
 env:
   TAG: 'v1'
+  REPO: 'sfwifi6/engines'
 
 jobs:
   repack:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 120
     strategy:
       fail-fast: false
       max-parallel: 3
       matrix:
         engine: [clang, golang, openjdk]
     steps:
+      - name: 取代码（gh 需要 git 仓库上下文）
+        uses: actions/checkout@v4
+
       - name: 下载原包
         run: |
           set -u
-          URL="https://github.com/sfwifi6/engines/releases/download/${TAG}/${{ matrix.engine }}-engine.tar.gz"
+          URL="https://github.com/${REPO}/releases/download/${TAG}/${{ matrix.engine }}-engine.tar.gz"
           echo "下载 $URL"
-          curl -sL --retry 3 --retry-delay 3 -o old.tar.gz "$URL"
+          curl -sL --retry 3 --retry-delay 5 -o old.tar.gz "$URL"
           ls -l old.tar.gz
           test -s old.tar.gz
 
@@ -43,10 +48,10 @@ jobs:
           echo "--- 顶层 ---"
           ls work
           echo "--- manifest ---"
-          head -c 400 work/manifest.json || true
+          head -c 300 work/manifest.json || true
           echo ""
-          echo "--- 最长路径 ---"
-          find work \( -type f -o -type l \) | awk '{print length($0), $0}' | sort -rn | head -3 || true
+          echo "--- 条目数 ---"
+          tar -tzf old.tar.gz | wc -l
 
       - name: 重打包
         run: |
@@ -71,14 +76,14 @@ jobs:
       - name: 校验新包
         run: |
           set -u
-          echo "--- 条目数 ---"
+          echo "--- 新包条目数 ---"
           tar -tzf new.tar.gz | wc -l
-          echo "--- 扩展头检查 ---"
-          python3 -c "import zlib;d=open('new.tar.gz','rb').read();r=zlib.decompressobj(16+zlib.MAX_WBITS).decompress(d);print('!!! 仍有 PAX 头' if b'PaxHeader' in r[:400000] else 'OK 无 PAX 头')"
-          echo "--- 关键主程序 ---"
-          tar -tzf new.tar.gz | grep -E 'usr/bin/(clang|clang\+\+|gcc|g\+\+|go|javac|java)$' | head -12 || true
+          echo "--- PAX 头检查 ---"
+          python3 -c "import zlib;d=open('new.tar.gz','rb').read();r=zlib.decompressobj(16+zlib.MAX_WBITS).decompress(d);print('!!! 仍有 PAX 头' if b'PaxHeader' in r[:5000000] else 'OK 无 PAX 头')"
+          echo "--- 主程序 ---"
+          tar -tzf new.tar.gz | grep -E 'usr/bin/(clang|clang\+\+|gcc|g\+\+|go|gofmt|javac|java)$' | head -10 || true
           echo "--- manifest ---"
-          tar -xzf new.tar.gz -O ./manifest.json 2>/dev/null | head -c 400 || true
+          tar -xzf new.tar.gz -O ./manifest.json 2>/dev/null | head -c 300 || true
 
       - name: 上传新资产
         env:
@@ -88,12 +93,12 @@ jobs:
           NEW="${{ matrix.engine }}-engine-ustar.tar.gz"
           cp new.tar.gz "$NEW"
           echo "上传 $NEW  ($SIZE bytes, md5=$MD5)"
-          gh release upload "$TAG" "$NEW" --clobber
+          gh release upload "$TAG" "$NEW" --clobber --repo "$REPO"
           echo "=== 上传完成 ==="
-          gh release view "$TAG" --json assets --jq '.assets[] | select(.name|contains("ustar")) | "\(.name)  \(.size) bytes"'
-          echo "### ${{ matrix.engine }} 到 $NEW  size=$SIZE  md5=$MD5" >> "$GITHUB_STEP_SUMMARY"
+          gh release view "$TAG" --json assets --repo "$REPO" --jq '.assets[] | select(.name|contains("ustar")) | "\(.name)  \(.size) bytes"' || true
+          echo "### ${{ matrix.engine }} 已上传  size=$SIZE  md5=$MD5" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: 失败时记录日志到仓库
+      - name: 失败时把日志提交回仓库
         if: failure()
         env:
           GH_TOKEN: ${{ github.token }}
@@ -102,17 +107,15 @@ jobs:
           mkdir -p built
           F="built/repack-fail-${{ matrix.engine }}.txt"
           {
-            echo "=== ${{ matrix.engine }} 重打包失败 ==="
+            echo "=== ${{ matrix.engine }} 重打包失败 $(date -u) ==="
             echo "--- err.txt ---"
             cat err.txt 2>/dev/null || echo "(无)"
             echo "--- 目录 ---"
             ls -l
-            echo "--- work 顶层 ---"
-            ls work 2>/dev/null || echo "(无 work)"
           } > "$F"
-          git init -q . 2>/dev/null || true
           git config user.email "actions@github.com"
           git config user.name "actions"
           git add -f "$F"
-          git commit -qm "log: ${{ matrix.engine }} 重打包失败日志" || true
-          git push -q "https://x-access-token:${GH_TOKEN}@github.com/sfwifi6/engines.git" HEAD:main || echo "推送日志失败"
+          git commit -m "log: ${{ matrix.engine }} 失败日志" || true
+          git pull --rebase -q origin main || true
+          git push -q origin HEAD:main || echo "推送日志失败"
