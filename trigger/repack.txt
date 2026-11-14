@@ -1,5 +1,5 @@
-重打包 PAX 引擎包（第 3 次触发，已修复 pipefail/SIGPIPE）
-时间: 2026-11-15T01:55Z
+重打包 PAX 引擎包（第 4 次触发，已加 actions/checkout + gh --repo）
+时间: 2026-11-15T02:01Z
 目标: clang / golang / openjdk
-原因: 前两次失败 —— 第 1 次 YAML 缩进错，第 2 次 `set -o pipefail` + `| head -3` 触发 SIGPIPE 141
-动作: 解压后改用 ustar 重打包，输出 *-engine-ustar.tar.gz；失败时把日志提交到 built/
+本地已实测成功：clang 9102 条目 / golang 8386 / openjdk 6405，usr/bin 与 usr/lib 数量与原包完全一致，无 PAX 头
+前三次失败原因: 第1次 YAML 缩进；第2次 pipefail+SIGPIPE；第3次 gh 无 git 仓库上下文
