@@ -1,20 +1,20 @@
-# 下载 2026-11-14T17:50:45Z
+# 下载 2026-11-14T18:01:11Z
 ↓ python-engine.tar.gz
-   OK  16648344 bytes  15s
+   OK  16648344 bytes  13s
 ↓ clang.p00
-   OK  94371840 bytes  58s
+   OK  94371840 bytes  62s
 ↓ clang.p01
-   OK  48548417 bytes  38s
+   OK  48548417 bytes  32s
    merge clang OK 142920257
 ↓ go.p00
-   OK  94371840 bytes  73s
+   OK  94371840 bytes  51s
 ↓ go.p01
-   OK  94371840 bytes  62s
+   OK  94371840 bytes  76s
 ↓ go.p02
-   OK  11216989 bytes  10s
+   OK  11216989 bytes  9s
    merge golang OK 199960669
 ↓ jdk.p00
-   OK  94371840 bytes  62s
+   OK  94371840 bytes  51s
 ↓ jdk.p01
    OK  38689024 bytes  28s
    merge openjdk OK 133060864
@@ -25,7 +25,7 @@ golang-engine.tar.gz  199960669  7805fc09024b07f986c8f58dcc726c5c
 openjdk-engine.tar.gz  133060864  956241d3cf432260b4e822dc1a83d164
 python-engine.tar.gz  16648344  5c0749f7843000b1ecee176ff84575d9
 
-# 发布 2026-11-14T17:56:32Z  tag=v1
+# 发布 2026-11-14T18:06:34Z  tag=v1
 Release v1 已存在
 ↑ clang-engine.tar.gz  142920257 bytes
    OK
@@ -50,8 +50,10 @@ asset:	ai-engine.tar.gz
 asset:	aiagent-engine.tar.gz
 asset:	androidapp-engine.tar.gz
 asset:	apkbuild-engine.tar.gz
+asset:	clang-engine-ustar.tar.gz
 asset:	clang-engine.tar.gz
 asset:	git-engine.tar.gz
+asset:	golang-engine-ustar.tar.gz
 asset:	golang-engine.tar.gz
 asset:	html-engine.tar.gz
 asset:	kotlin-engine.tar.gz
@@ -61,6 +63,7 @@ asset:	mpweixin-engine.tar.gz
 asset:	mysql-engine.tar.gz
 asset:	nginx-engine.tar.gz
 asset:	nodejs-engine.tar.gz
+asset:	openjdk-engine-ustar.tar.gz
 asset:	openjdk-engine.tar.gz
 asset:	php-engine.tar.gz
 asset:	python-engine.tar.gz
