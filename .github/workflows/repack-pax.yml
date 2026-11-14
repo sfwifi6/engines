@@ -1,0 +1,121 @@
+name: 重打包PAX引擎
+
+# 背景：clang/golang/openjdk 三个包是 PAX 格式（每个文件前带 @PaxHeader 扩展头），
+# App 内置解压器处理 PAX 会中途中断（只解出几百个条目），导致「引擎包不完整」。
+# 本 workflow 把这三个包解压后用 ustar（失败则 gnu）重新打包，输出 -ustar 后缀的新资产。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'trigger/repack.txt'
+
+permissions:
+  contents: write
+
+env:
+  TAG: 'v1'
+
+jobs:
+  repack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        engine: [clang, golang, openjdk]
+    steps:
+      - name: 下载原包 ${{ matrix.engine }}
+        run: |
+          set -uo pipefail
+          URL="https://github.com/sfwifi6/engines/releases/download/${TAG}/${{ matrix.engine }}-engine.tar.gz"
+          echo "下载 $URL"
+          curl -sL --retry 3 --retry-delay 3 -o old.tar.gz "$URL"
+          ls -l old.tar.gz
+          test -s old.tar.gz
+
+      - name: 解压
+        run: |
+          set -uo pipefail
+          mkdir -p work
+          tar -xzf old.tar.gz -C work
+          echo "--- 顶层 ---"
+          ls work
+          echo "--- manifest ---"
+          head -c 400 work/manifest.json || true
+          echo ""
+          echo "--- 最长路径 ---"
+          find work \( -type f -o -type l \) | awk '{print length($0), $0}' | sort -rn | head -3
+
+      - name: 重打包（优先 ustar，失败退回 gnu）
+        run: |
+          set -uo pipefail
+          cd work
+          if tar --format=ustar --mtime='2026-01-01 00:00:00' --owner=0 --group=0 --numeric-owner \
+                -czf ../new.tar.gz ./manifest.json ./data 2>../err.txt; then
+            echo "格式: ustar"
+          else
+            echo "ustar 失败，改用 gnu："
+            cat ../err.txt
+            tar --format=gnu --mtime='2026-01-01 00:00:00' --owner=0 --group=0 --numeric-owner \
+                -czf ../new.tar.gz ./manifest.json ./data
+            echo "格式: gnu"
+          fi
+          cd ..
+          ls -l new.tar.gz
+          SZ=$(stat -c%s new.tar.gz)
+          MD=$(md5sum new.tar.gz | cut -d' ' -f1)
+          echo "SIZE=$SZ" >> "$GITHUB_ENV"
+          echo "MD5=$MD"   >> "$GITHUB_ENV"
+          echo "### ${{ matrix.engine }}  size=$SZ  md5=$MD" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 校验新包
+        run: |
+          set -uo pipefail
+          echo "--- 条目数 ---"
+          tar -tzf new.tar.gz | wc -l
+          echo "--- 扩展头统计（应为 0 PAX） ---"
+          python3 -c "
+import zlib
+d=open('new.tar.gz','rb').read()
+o=zlib.decompressobj(16+zlib.MAX_WBITS)
+raw=o.decompress(d)
+def ts(b,off,l):
+    e=off
+    while e<off+l and b[e]!=0: e+=1
+    return b[off:e].decode('utf-8','replace')
+p=0;pax=0;gnu=0;n=0
+while p+512<=len(raw):
+    h=raw[p:p+512]; p+=512
+    nm=ts(h,0,100)
+    if nm=='': break
+    s=ts(h,124,12).strip()
+    sz=int(s,8) if s else 0
+    tp=h[156:157]
+    if tp in (b'x',b'L'):
+        if tp==b'x': pax+=1
+        else: gnu+=1
+        p+=sz+((512-(sz%512))%512); continue
+    n+=1
+    p+=sz+((512-(sz%512))%512)
+print('真实条目=%d  PAX头=%d  LongLink=%d'%(n,pax,gnu))
+assert pax==0, '新包里仍有 PAX 头！'
+"
+          echo "--- 关键主程序 ---"
+          tar -tzf new.tar.gz | grep -E 'usr/bin/(clang|clang\+\+|gcc|g\+\+|go|javac|java)$' | head -12 || true
+          echo "--- manifest ---"
+          tar -xzf new.tar.gz -O ./manifest.json 2>/dev/null | head -c 400 || true
+
+      - name: 上传新资产
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          NEW="${{ matrix.engine }}-engine-ustar.tar.gz"
+          cp new.tar.gz "$NEW"
+          echo "上传 $NEW  ($SIZE bytes, md5=$MD5)"
+          gh release upload "$TAG" "$NEW" --clobber
+          echo "=== 上传完成 ==="
+          gh release view "$TAG" --json assets --jq '.assets[] | select(.name|contains("ustar")) | "\(.name)  \(.size) bytes"'
+          echo "### ✅ ${{ matrix.engine }} → $NEW  size=$SIZE  md5=$MD5" >> "$GITHUB_STEP_SUMMARY"
