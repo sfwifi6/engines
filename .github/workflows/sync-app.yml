@@ -1,0 +1,51 @@
+name: sync-app-index
+
+# 把最新版 index.html 同步到仓库根目录。
+# 触发方式：改 app-url.txt 里的源地址并提交，或手动 Run workflow。
+on:
+  push:
+    paths:
+      - 'app-url.txt'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download index.html
+        run: |
+          URL="$(tr -d '\r\n ' < app-url.txt)"
+          echo "源地址: $URL"
+          curl -sSL --retry 3 --retry-delay 3 --max-time 180 -o index.html "$URL"
+          SIZE=$(stat -c%s index.html)
+          echo "下载大小: $SIZE 字节"
+          head -c 80 index.html; echo
+          if [ "$SIZE" -lt 100000 ]; then
+            echo "::error::文件太小（$SIZE 字节），判定下载失败"
+            exit 1
+          fi
+          if ! head -c 100 index.html | grep -qi '<!DOCTYPE html>'; then
+            echo "::error::内容不是 HTML，判定下载失败"
+            exit 1
+          fi
+          VER=$(grep -o "APP_VERSION='[^']*'" index.html | head -1)
+          echo "版本号: $VER"
+          echo "APP_VERSION=$VER" >> "$GITHUB_ENV"
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          if git diff --cached --quiet; then
+            echo "内容没有变化，跳过提交"
+          else
+            git commit -m "sync index.html ${APP_VERSION}"
+            git push
+          fi
