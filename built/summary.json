@@ -150,5 +150,29 @@
   "version": "0.12.6-eng1",
   "desc": "Neovim 0.12 终端编辑器",
   "bin": "bin/nvim"
+ },
+ "aapt": {
+  "file": "aapt-engine.tar.gz",
+  "size": 1968683,
+  "md5": "0ce1665a29ba75ee734c9f994773ffe0",
+  "version": "16.0.0.4-4-eng1",
+  "desc": "AAPT + zipalign 传统打包工具（资源编译 + APK 对齐）",
+  "bin": "bin/aapt"
+ },
+ "androidapp": {
+  "file": "androidapp-engine.tar.gz",
+  "size": 177312,
+  "md5": "0f8d315c80161734784d8c31bbfa9701",
+  "version": "1.0.0-eng1",
+  "desc": "Android 工程模板（Gradle + WebView 骨架，改 assets/index.html 就能出 APK）",
+  "bin": "bin/proot"
+ },
+ "html": {
+  "file": "html-engine.tar.gz",
+  "size": 2316859,
+  "md5": "1d1b43d23b4b73c4eab9e6d652243c5e",
+  "version": "1.0.0-eng1",
+  "desc": "前端离线库合集（Vue/React/Tailwind/CodeMirror/Chart.js/Mermaid 等 15 套）",
+  "bin": "bin/proot"
  }
 }
