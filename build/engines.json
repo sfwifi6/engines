@@ -91,6 +91,11 @@
       "pkgs": ["openjdk-17"],
       "bin": "bin/java",
       "desc": "APK 打包工具链（JDK 17 + 签名）"
+    },
+    "aapt2": {
+      "pkgs": ["aapt2"],
+      "bin": "bin/aapt2",
+      "desc": "AAPT2 Android 资源编译器（res 编译 + APK 链接）"
     }
   }
 }
