@@ -24,24 +24,7 @@ jobs:
       max-parallel: 5
       matrix:
         engine:
-          - rust
-          - sqlite
-          - nginx
-          - redis
-          - ssh
-          - vim
-          - sysbase
-          - nodejs
-          - php
-          - kotlin
-          - mysql
-          - ai
-          - aiagent
-          - mpweixin
-          - mpdouyin
-          - mpalipay
-          - apkbuild
-          - git
+          - aapt2
 
     steps:
       - uses: actions/checkout@v4
@@ -68,6 +51,19 @@ jobs:
           ls -la *.tar.gz
           cat ${{ matrix.engine }}-info.json
 
+      - name: 校验包内容
+        working-directory: build
+        run: |
+          set -uo pipefail
+          mkdir -p /tmp/chk && tar xzf ${{ matrix.engine }}-engine.tar.gz -C /tmp/chk
+          U=/tmp/chk/data/data/com.termux/files/usr
+          echo "=== bin ==="
+          ls -la $U/bin/ | head -20
+          echo "=== lib 数量 ==="
+          ls $U/lib/*.so* 2>/dev/null | wc -l
+          echo "=== 顶层 ==="
+          ls -la /tmp/chk
+
       - name: 上传产物
         uses: actions/upload-artifact@v4
         with:
@@ -78,36 +74,8 @@ jobs:
           retention-days: 7
           compression-level: 0
 
-  # html / androidapp 不是 Termux 包，单独构建
-  extra:
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: 构建 html / androidapp
-        working-directory: build
-        run: |
-          python3 make_extra.py all
-          echo "--- 产物 ---"
-          ls -la out/
-
-      - name: 上传产物
-        uses: actions/upload-artifact@v4
-        with:
-          name: pkg-extra
-          path: |
-            build/out/*-engine.tar.gz
-            build/out/*-info.json
-          retention-days: 7
-          compression-level: 0
-
   release:
-    needs: [build, extra]
+    needs: [build]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -124,8 +92,6 @@ jobs:
         run: |
           echo "=== 构建结果 ==="
           ls -la dist/ || true
-          echo ""
-          echo "=== 各引擎大小 ==="
           for f in dist/*-engine.tar.gz; do
             [ -f "$f" ] || continue
             printf "%-28s %10d bytes\n" "$(basename $f)" "$(stat -c%s "$f")"
@@ -147,42 +113,4 @@ jobs:
           done
           echo ""
           echo "=== Release 资产 ==="
-          gh release view "$TAG"
-
-      - name: 生成汇总清单
-        if: always()
-        run: |
-          python3 - <<'PY'
-          import os, json, hashlib, glob
-          out = {}
-          for f in sorted(glob.glob('dist/*-engine.tar.gz')):
-              n = os.path.basename(f).replace('-engine.tar.gz','')
-              h = hashlib.md5(open(f,'rb').read()).hexdigest()
-              info = {}
-              ip = f'dist/{n}-info.json'
-              if os.path.exists(ip):
-                  info = json.load(open(ip, encoding='utf-8'))
-              out[n] = {
-                  'file': os.path.basename(f),
-                  'size': os.path.getsize(f),
-                  'md5': h,
-                  'version': info.get('version',''),
-                  'desc': info.get('desc',''),
-                  'bin': info.get('bin',''),
-              }
-          json.dump(out, open('dist/summary.json','w',encoding='utf-8'),
-                    ensure_ascii=False, indent=1)
-          print(json.dumps(out, ensure_ascii=False, indent=1))
-          PY
-
-      - name: 提交清单回仓库
-        if: always()
-        run: |
-          mkdir -p built
-          cp dist/summary.json built/summary.json 2>/dev/null || echo '{}' > built/summary.json
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f built/summary.json
-          git commit -m "引擎包构建清单 $(date -u +%FT%TZ)" || echo "无变化"
-          git pull --rebase || true
-          git push || echo "push 失败"
+          gh release view "$TAG" --json assets --jq '.assets[] | "\(.name)  \(.size)"'
