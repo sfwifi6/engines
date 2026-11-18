@@ -4,6 +4,12 @@ name: sync-app-index
 # 触发：改 app-url.txt 并提交，或手动 Run workflow。
 # 为什么走 Release 不走分支：本仓库 Actions 推分支一直失败，
 # 但 build-engines.yml 里的 gh release upload 长期稳定可用，故沿用。
+#
+# 产出资产（tag: app）：
+#   index.html                     原始文件名
+#   index_AICoder_latest.txt       永久链接，永远指向最新版
+#   index_AICoder_v<版本>.txt      带版本号的快照
+#   diag-app.txt                   下载诊断
 on:
   push:
     branches: [main]
@@ -34,6 +40,7 @@ jobs:
           echo "HTTP=$CODE" >> diag-app.txt
           SIZE=$(stat -c%s index.html 2>/dev/null || echo 0)
           echo "SIZE=$SIZE" >> diag-app.txt
+          echo "MD5=$(md5sum index.html 2>/dev/null | cut -d' ' -f1)" >> diag-app.txt
           echo "HEAD:" >> diag-app.txt
           head -c 200 index.html 2>/dev/null >> diag-app.txt || true
           echo "" >> diag-app.txt
@@ -50,15 +57,28 @@ jobs:
           set -uo pipefail
           if ! gh release view app >/dev/null 2>&1; then
             gh release create app --title "App 前端 index.html" \
-              --notes "编程专家 App 的前端页面，每次同步自动覆盖同名资产"
+              --notes "编程专家 App 的前端页面。index_AICoder_latest.txt 是永久链接，每次同步自动覆盖。"
           fi
           echo "--- 诊断 ---"
           cat diag-app.txt || true
-          gh release upload app diag-app.txt --clobber && echo "diag 上传 OK" || echo "diag 上传 FAIL"
-          if [ "${{ steps.dl.outcome }}" = "success" ]; then
-            gh release upload app index.html --clobber && echo "index.html 上传 OK" || echo "index.html 上传 FAIL"
-          else
+          gh release upload app diag-app.txt --clobber && echo "diag OK" || echo "diag FAIL"
+
+          if [ "${{ steps.dl.outcome }}" != "success" ]; then
             echo "下载未成功，本次只上传诊断"
+            gh release view app
+            exit 0
           fi
+
+          cp index.html index_AICoder_latest.txt
+          gh release upload app index.html index_AICoder_latest.txt --clobber \
+            && echo "index.html + latest.txt OK" || echo "上传 FAIL"
+
+          VER=$(grep -o "APP_VERSION='[^']*'" index.html | head -1 | sed "s/APP_VERSION='//; s/'$//" | cut -d'·' -f1)
+          if [ -n "$VER" ]; then
+            cp index.html "index_AICoder_v${VER}.txt"
+            gh release upload app "index_AICoder_v${VER}.txt" --clobber \
+              && echo "v${VER} 快照 OK" || echo "快照 FAIL"
+          fi
+
           echo "--- 当前资产 ---"
           gh release view app
