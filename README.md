@@ -4,6 +4,30 @@
 
 **当前状态：22 个引擎全部构建完成并上线。**
 
+## App 前端页面（index.html）
+
+APP 的 `assets/index.html` 也托管在本仓库 Release，链接永久有效：
+
+```
+https://github.com/sfwifi6/engines/releases/download/app/index_AICoder_latest.txt
+```
+
+上面这个链接**永远指向最新版**，每版自动覆盖，不用换链接。带版本号的快照：
+
+```
+https://github.com/sfwifi6/engines/releases/download/app/index_AICoder_v10.27.13.txt
+```
+
+### 怎么更新前端
+
+1. 把 `app-url.txt` 里那一行改成新版 index.html 的源地址
+2. 提交，`sync-app-index` 流程自动下载、校验、覆盖 Release 资产
+3. 看 `diag-app.txt` 确认版本号
+
+流程文件：`.github/workflows/sync-app.yml`
+
+> 注：本仓库 Actions 推分支一直失败（`git push` 无权限），所以前端文件走 Release 资产，与引擎包一致。
+
 ## 怎么用
 
 打开 APP → 底部「引擎」→ 滚到最下面「🌐 引擎源地址」，填：
