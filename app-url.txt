@@ -1,1 +1,2 @@
+# 把下面这一行改成最新版 index.html 的源地址，提交后自动同步到仓库根目录 index.html
 https://www.coze.cn/s/ZXrVnuheFfw/

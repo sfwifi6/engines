@@ -20,7 +20,7 @@ jobs:
 
       - name: Download index.html
         run: |
-          URL="$(tr -d '\r\n ' < app-url.txt)"
+          URL="$(grep -v '^#' app-url.txt | head -1 | tr -d '\r\n ')"
           echo "源地址: $URL"
           curl -sSL --retry 3 --retry-delay 3 --max-time 180 -o index.html "$URL"
           SIZE=$(stat -c%s index.html)
@@ -41,14 +41,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           python3 - <<'PY'
-          import base64, json, os, urllib.request
+          import base64, json, os, urllib.request, urllib.error
 
           token = os.environ['GH_TOKEN']
           repo = os.environ['GITHUB_REPOSITORY']
           api = 'https://api.github.com/repos/%s/contents/index.html' % repo
           head = {'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json'}
 
-          # 现有文件 sha（存在才能更新）
           sha = ''
           try:
               req = urllib.request.Request(api, headers=head)
