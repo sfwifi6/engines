@@ -1,4 +1,12 @@
 {
+ "aapt2": {
+  "file": "aapt2-engine.tar.gz",
+  "size": 7168422,
+  "md5": "ce9b47858441e22e86055725e89057d4",
+  "version": "16.0.0.4-4-eng1",
+  "desc": "AAPT2 Android 资源编译器（res 编译 + APK 链接）",
+  "bin": "bin/aapt2"
+ },
  "ai": {
   "file": "ai-engine.tar.gz",
   "size": 13465556,
