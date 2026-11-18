@@ -92,6 +92,11 @@
       "bin": "bin/java",
       "desc": "APK 打包工具链（JDK 17 + 签名）"
     },
+    "aapt": {
+      "pkgs": ["aapt"],
+      "bin": "bin/aapt",
+      "desc": "AAPT + zipalign 传统打包工具（资源编译 + APK 对齐）"
+    },
     "aapt2": {
       "pkgs": ["aapt2"],
       "bin": "bin/aapt2",
