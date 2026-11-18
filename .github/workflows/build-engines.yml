@@ -14,6 +14,7 @@ permissions:
 env:
   TERMUX_MIRROR: 'https://mirrors.tuna.tsinghua.edu.cn/termux/apt/termux-main'
   TAG: 'v1'
+  CACHE_VER: 'v2'
 
 jobs:
   build:
@@ -37,15 +38,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: build/cache
-          key: deb-${{ matrix.engine }}-${{ github.run_id }}
+          key: ${{ env.CACHE_VER }}-deb-${{ matrix.engine }}-${{ github.run_id }}
           restore-keys: |
-            deb-${{ matrix.engine }}-
-            deb-
+            ${{ env.CACHE_VER }}-deb-${{ matrix.engine }}-
 
       - name: 构建 ${{ matrix.engine }}
         working-directory: build
         run: |
           df -h / | tail -1
+          rm -rf cache
           python3 build_engine.py ${{ matrix.engine }}
           echo "--- 产物 ---"
           ls -la *.tar.gz
@@ -60,9 +61,16 @@ jobs:
           echo "=== bin ==="
           ls -la $U/bin/ | head -20
           echo "=== lib 数量 ==="
-          ls $U/lib/*.so* 2>/dev/null | wc -l
-          echo "=== 顶层 ==="
-          ls -la /tmp/chk
+          ls $U/lib/ | wc -l
+          echo "=== libfmt ==="
+          ls -la $U/lib/libfmt* || echo "✗ 没有 libfmt"
+          echo "=== NEEDED 对照 ==="
+          for n in $(readelf -d $U/bin/${{ matrix.engine }} 2>/dev/null | grep NEEDED | sed 's/.*\[\(.*\)\]/\1/'); do
+            case "$n" in
+              libc.so|libdl.so|libm.so|liblog.so|libandroid.so) echo "SYS  $n";;
+              *) if [ -e "$U/lib/$n" ]; then echo "OK   $n"; else echo "MISS $n"; fi;;
+            esac
+          done
 
       - name: 上传产物
         uses: actions/upload-artifact@v4
