@@ -30,22 +30,45 @@ jobs:
             echo "::error::文件太小（$SIZE 字节），判定下载失败"
             exit 1
           fi
-          if ! head -c 100 index.html | grep -qi '<!DOCTYPE html>'; then
+          if ! head -c 200 index.html | grep -qi '<!DOCTYPE html>'; then
             echo "::error::内容不是 HTML，判定下载失败"
             exit 1
           fi
-          VER=$(grep -o "APP_VERSION='[^']*'" index.html | head -1)
-          echo "版本号: $VER"
-          echo "APP_VERSION=$VER" >> "$GITHUB_ENV"
+          grep -o "APP_VERSION='[^']*'" index.html | head -1
 
-      - name: Commit
+      - name: Upload via API
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add index.html
-          if git diff --cached --quiet; then
-            echo "内容没有变化，跳过提交"
-          else
-            git commit -m "sync index.html ${APP_VERSION}"
-            git push
-          fi
+          python3 - <<'PY'
+          import base64, json, os, urllib.request
+
+          token = os.environ['GH_TOKEN']
+          repo = os.environ['GITHUB_REPOSITORY']
+          api = 'https://api.github.com/repos/%s/contents/index.html' % repo
+          head = {'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json'}
+
+          # 现有文件 sha（存在才能更新）
+          sha = ''
+          try:
+              req = urllib.request.Request(api, headers=head)
+              with urllib.request.urlopen(req, timeout=30) as r:
+                  sha = json.load(r).get('sha', '')
+          except urllib.error.HTTPError as e:
+              if e.code != 404:
+                  raise
+
+          data = base64.b64encode(open('index.html', 'rb').read()).decode()
+          body = {'message': 'sync index.html', 'content': data, 'branch': 'main'}
+          if sha:
+              body['sha'] = sha
+
+          req = urllib.request.Request(api, data=json.dumps(body).encode(),
+                                       headers=dict(head, **{'Content-Type': 'application/json'}),
+                                       method='PUT')
+          with urllib.request.urlopen(req, timeout=120) as r:
+              res = json.load(r)
+          print('提交成功:', res['commit']['sha'])
+          print('文件大小:', res['content']['size'], '字节')
+          print('下载地址:', res['content']['download_url'])
+          PY
