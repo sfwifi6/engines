@@ -1,8 +1,9 @@
 name: sync-app-index
 
-# 把最新版 index.html 同步到仓库根目录，同时把下载诊断写进 diag-run.txt。
+# 把最新版 index.html 同步到 Release 资产，给 App 一个永久下载地址。
 # 触发：改 app-url.txt 并提交，或手动 Run workflow。
-# 提交写法与 build-engines.yml 一致（该流程在本仓库已跑通，bot 提交正常）。
+# 为什么走 Release 不走分支：本仓库 Actions 推分支一直失败，
+# 但 build-engines.yml 里的 gh release upload 长期稳定可用，故沿用。
 on:
   push:
     branches: [main]
@@ -21,40 +22,43 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 下载 index.html
+      - name: 下载并校验
         id: dl
         continue-on-error: true
         run: |
-          : > diag-run.txt
+          : > diag-app.txt
           URL="$(grep -v '^#' app-url.txt | head -1 | tr -d '\r\n ')"
-          echo "URL=$URL" >> diag-run.txt
+          echo "URL=$URL" >> diag-app.txt
           CODE=$(curl -sSL --retry 3 --retry-delay 3 --max-time 240 \
-                 -o index.html -w '%{http_code}' "$URL" 2>>diag-run.txt) || CODE="curl_fail"
-          echo "HTTP=$CODE" >> diag-run.txt
+                 -o index.html -w '%{http_code}' "$URL" 2>>diag-app.txt) || CODE="curl_fail"
+          echo "HTTP=$CODE" >> diag-app.txt
           SIZE=$(stat -c%s index.html 2>/dev/null || echo 0)
-          echo "SIZE=$SIZE" >> diag-run.txt
-          echo "HEAD:" >> diag-run.txt
-          head -c 200 index.html 2>/dev/null >> diag-run.txt || true
-          echo "" >> diag-run.txt
-          grep -o "APP_VERSION='[^']*'" index.html 2>/dev/null | head -1 >> diag-run.txt || true
-          cat diag-run.txt
-          if [ "$SIZE" -lt 100000 ]; then echo "RESULT=too_small" >> diag-run.txt; exit 1; fi
-          if ! head -c 400 index.html | grep -qi '<!DOCTYPE html>'; then echo "RESULT=not_html" >> diag-run.txt; exit 1; fi
-          echo "RESULT=ok" >> diag-run.txt
+          echo "SIZE=$SIZE" >> diag-app.txt
+          echo "HEAD:" >> diag-app.txt
+          head -c 200 index.html 2>/dev/null >> diag-app.txt || true
+          echo "" >> diag-app.txt
+          grep -o "APP_VERSION='[^']*'" index.html 2>/dev/null | head -1 >> diag-app.txt || true
+          cat diag-app.txt
+          if [ "$SIZE" -lt 100000 ]; then echo "RESULT=too_small" >> diag-app.txt; exit 1; fi
+          if ! head -c 400 index.html | grep -qi '<!DOCTYPE html>'; then echo "RESULT=not_html" >> diag-app.txt; exit 1; fi
+          echo "RESULT=ok" >> diag-app.txt
 
-      - name: 提交回仓库
-        if: always()
+      - name: 上传到 Release（App 前端）
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if [ "${{ steps.dl.outcome }}" = "success" ] && [ -f index.html ]; then
-            git add -f index.html
-            echo "将提交 index.html ($(stat -c%s index.html) 字节)"
-          else
-            echo "下载未成功，本次只提交诊断"
-            rm -f index.html
+          set -uo pipefail
+          if ! gh release view app >/dev/null 2>&1; then
+            gh release create app --title "App 前端 index.html" \
+              --notes "编程专家 App 的前端页面，每次同步自动覆盖同名资产"
           fi
-          git add -f diag-run.txt
-          git commit -m "sync index.html $(date -u +%FT%TZ)" || echo "无变化"
-          git pull --rebase || true
-          git push || echo "push 失败"
+          echo "--- 诊断 ---"
+          cat diag-app.txt || true
+          gh release upload app diag-app.txt --clobber && echo "diag 上传 OK" || echo "diag 上传 FAIL"
+          if [ "${{ steps.dl.outcome }}" = "success" ]; then
+            gh release upload app index.html --clobber && echo "index.html 上传 OK" || echo "index.html 上传 FAIL"
+          else
+            echo "下载未成功，本次只上传诊断"
+          fi
+          echo "--- 当前资产 ---"
+          gh release view app
