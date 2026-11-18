@@ -30,7 +30,26 @@ jobs:
       max-parallel: 5
       matrix:
         engine:
+          - rust
+          - sqlite
+          - nginx
+          - redis
+          - ssh
+          - vim
+          - sysbase
+          - nodejs
+          - php
+          - kotlin
+          - mysql
+          - ai
+          - aiagent
+          - mpweixin
+          - mpdouyin
+          - mpalipay
+          - apkbuild
+          - git
           - aapt
+          - aapt2
 
     steps:
       - uses: actions/checkout@v4
