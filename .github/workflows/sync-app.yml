@@ -1,15 +1,14 @@
 name: sync-app-index
 
 # 把最新版 index.html 同步到仓库根目录。
-# 触发方式：改 app-url.txt 里的源地址并提交，或手动 Run workflow。
+# 触发：改 app-url.txt 里的源地址并提交，或手动 Run workflow。
 on:
   push:
     paths:
       - 'app-url.txt'
   workflow_dispatch:
 
-permissions:
-  contents: write
+permissions: write-all
 
 jobs:
   sync:
@@ -17,6 +16,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download index.html
         run: |
@@ -26,48 +27,14 @@ jobs:
           SIZE=$(stat -c%s index.html)
           echo "下载大小: $SIZE 字节"
           head -c 80 index.html; echo
-          if [ "$SIZE" -lt 100000 ]; then
-            echo "::error::文件太小（$SIZE 字节），判定下载失败"
-            exit 1
-          fi
-          if ! head -c 200 index.html | grep -qi '<!DOCTYPE html>'; then
-            echo "::error::内容不是 HTML，判定下载失败"
-            exit 1
-          fi
+          if [ "$SIZE" -lt 100000 ]; then echo "::error::文件太小"; exit 1; fi
+          if ! head -c 200 index.html | grep -qi '<!DOCTYPE html>'; then echo "::error::不是 HTML"; exit 1; fi
           grep -o "APP_VERSION='[^']*'" index.html | head -1
 
-      - name: Upload via API
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          python3 - <<'PY'
-          import base64, json, os, urllib.request, urllib.error
-
-          token = os.environ['GH_TOKEN']
-          repo = os.environ['GITHUB_REPOSITORY']
-          api = 'https://api.github.com/repos/%s/contents/index.html' % repo
-          head = {'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json'}
-
-          sha = ''
-          try:
-              req = urllib.request.Request(api, headers=head)
-              with urllib.request.urlopen(req, timeout=30) as r:
-                  sha = json.load(r).get('sha', '')
-          except urllib.error.HTTPError as e:
-              if e.code != 404:
-                  raise
-
-          data = base64.b64encode(open('index.html', 'rb').read()).decode()
-          body = {'message': 'sync index.html', 'content': data, 'branch': 'main'}
-          if sha:
-              body['sha'] = sha
-
-          req = urllib.request.Request(api, data=json.dumps(body).encode(),
-                                       headers=dict(head, **{'Content-Type': 'application/json'}),
-                                       method='PUT')
-          with urllib.request.urlopen(req, timeout=120) as r:
-              res = json.load(r)
-          print('提交成功:', res['commit']['sha'])
-          print('文件大小:', res['content']['size'], '字节')
-          print('下载地址:', res['content']['download_url'])
-          PY
+      - name: Commit
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "sync index.html from app-url.txt"
+          file_pattern: index.html
+          commit_user_name: github-actions[bot]
+          commit_user_email: 41898282+github-actions[bot]@users.noreply.github.com
