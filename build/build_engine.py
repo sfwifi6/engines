@@ -27,6 +27,7 @@ import time
 import hashlib
 import subprocess
 import urllib.request
+from urllib.parse import quote
 from concurrent.futures import ThreadPoolExecutor
 
 MIRROR = os.environ.get('TERMUX_MIRROR',
@@ -48,6 +49,12 @@ CACHE = 'cache'
 
 def log(*a):
     print(*a, flush=True)
+
+
+def pkg_url(fn):
+    """Termux 的 Filename 里有裸冒号（epoch，如 fmt_1:12.2.1_aarch64.deb），
+    URL 里必须编码成 %3A，否则部分镜像站会 404。"""
+    return MIRROR + '/' + '/'.join(quote(seg, safe='') for seg in fn.split('/'))
 
 
 def fetch(url, dest, retries=6, quiet=False):
@@ -143,7 +150,7 @@ def download_debs(pkgs, idx):
             log(f'   {p} 无 Filename 字段，跳过')
             continue
         dest = os.path.join(CACHE, os.path.basename(fn))
-        jobs.append((p, f'{MIRROR}/{fn}', dest))
+        jobs.append((p, pkg_url(fn), dest))
 
     log(f'需要下载 {len(jobs)} 个 deb')
 
@@ -153,6 +160,7 @@ def download_debs(pkgs, idx):
         return p, ok, os.path.getsize(dest) if ok and os.path.exists(dest) else 0
 
     total = 0
+    failed = []
     with ThreadPoolExecutor(max_workers=8) as ex:
         for i, (p, ok, sz) in enumerate(ex.map(one, jobs), 1):
             if ok:
@@ -160,7 +168,10 @@ def download_debs(pkgs, idx):
                 if i % 10 == 0 or i == len(jobs):
                     log(f'   {i}/{len(jobs)}  累计 {total/1048576:.1f}MB')
             else:
+                failed.append(p)
                 log(f'   ✗ 下载失败 {p}')
+    if failed:
+        sys.exit(f'✗ 致命：{len(failed)} 个包下载失败 {failed}，不打包残缺产物')
     return total
 
 
@@ -186,6 +197,8 @@ def unpack(pkgs, idx):
             fail.append(p)
             log(f'   解包失败 {p}: {r.stderr[:120]}')
     log(f'解包成功 {ok}，失败 {len(fail)}')
+    if fail:
+        sys.exit(f'✗ 致命：{len(fail)} 个包解包失败 {fail}，不打包残缺产物')
     return ok, fail
 
 
@@ -204,6 +217,46 @@ def slim():
                         pass
             subprocess.run(['rm', '-rf', d], check=False)
     log(f'清理文档 {saved/1048576:.1f}MB')
+
+
+def check_needed(usr):
+    """校验所有 ELF 的 NEEDED 都能在 lib/ 里找到。
+    Android 系统库（libc.so / libdl.so / libm.so / liblog.so 等）由系统提供，不计入。"""
+    SYS = {'libc.so', 'libdl.so', 'libm.so', 'liblog.so', 'libz.so',
+           'libstdc++.so', 'libandroid.so', 'libEGL.so', 'libGLESv1_CM.so',
+           'libGLESv2.so', 'libjnigraphics.so', 'libOpenSLES.so', 'libOpenMAXAL.so',
+           'libmediandk.so', 'libcamera2ndk.so', 'libnativewindow.so',
+           'libsync.so', 'libvulkan.so', 'libneuralnetworks.so'}
+    libdir = os.path.join(usr, 'lib')
+    bindir = os.path.join(usr, 'bin')
+    have = set(os.listdir(libdir)) if os.path.isdir(libdir) else set()
+    missing = {}
+    targets = []
+    if os.path.isdir(bindir):
+        for f in os.listdir(bindir):
+            fp = os.path.join(bindir, f)
+            if os.path.isfile(fp) and not os.path.islink(fp):
+                targets.append(fp)
+    for fp in targets:
+        r = subprocess.run(['readelf', '-d', fp], capture_output=True, text=True)
+        if r.returncode != 0:
+            continue
+        for line in r.stdout.split('\n'):
+            if '(NEEDED)' not in line:
+                continue
+            m = re.search(r'\[(.*?)\]', line)
+            if not m:
+                continue
+            n = m.group(1)
+            if n in SYS:
+                continue
+            if n not in have:
+                missing.setdefault(n, []).append(os.path.basename(fp))
+    if missing:
+        for n, users in missing.items():
+            log(f'   ✗ 缺库 {n}  被 {", ".join(users[:3])} 需要')
+        sys.exit(f'✗ 致命：{len(missing)} 个依赖库没进包 {sorted(missing)}')
+    log(f'✓ 依赖校验通过（{len(targets)} 个可执行文件，lib 里 {len(have)} 个文件）')
 
 
 def make_manifest(name, cfg, pkgs, idx):
@@ -294,6 +347,9 @@ def main():
     if not os.path.exists(proot):
         sys.exit(f'✗ 致命：{name} 包里没有 usr/bin/proot，APP 会判为损坏')
     log(f'✓ proot 就位 {os.path.getsize(proot)} 字节')
+
+    # 硬校验：所有 NEEDED 都要在 lib 里
+    check_needed(usr)
 
     man = make_manifest(name, cfg, pkgs, idx)
     out = pack(name)
