@@ -7,6 +7,11 @@ on:
       - 'build/**'
       - 'trigger/build.txt'
   workflow_dispatch:
+    inputs:
+      engines:
+        description: '只构建这些引擎（逗号分隔，留空=全部）'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -25,25 +30,7 @@ jobs:
       max-parallel: 5
       matrix:
         engine:
-          - rust
-          - sqlite
-          - nginx
-          - redis
-          - ssh
-          - vim
-          - sysbase
-          - nodejs
-          - php
-          - kotlin
-          - mysql
-          - ai
-          - aiagent
-          - mpweixin
-          - mpdouyin
-          - mpalipay
-          - apkbuild
-          - git
-          - aapt2
+          - aapt
 
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +39,18 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: 判断是否需要构建
+        id: need
+        run: |
+          E="${{ github.event.inputs.engines }}"
+          if [ -z "$E" ]; then echo "go=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          case ",$E," in
+            *",${{ matrix.engine }},"*) echo "go=1" >> "$GITHUB_OUTPUT";;
+            *) echo "go=0" >> "$GITHUB_OUTPUT";;
+          esac
+
       - name: 缓存 deb
+        if: steps.need.outputs.go == '1'
         uses: actions/cache@v4
         with:
           path: build/cache
@@ -61,6 +59,7 @@ jobs:
             ${{ env.CACHE_VER }}-deb-${{ matrix.engine }}-
 
       - name: 构建 ${{ matrix.engine }}
+        if: steps.need.outputs.go == '1'
         working-directory: build
         run: |
           df -h / | tail -1
@@ -71,26 +70,31 @@ jobs:
           cat ${{ matrix.engine }}-info.json
 
       - name: 校验包内容
+        if: steps.need.outputs.go == '1'
         working-directory: build
         run: |
           set -uo pipefail
           mkdir -p /tmp/chk && tar xzf ${{ matrix.engine }}-engine.tar.gz -C /tmp/chk
           U=/tmp/chk/data/data/com.termux/files/usr
           echo "=== bin ==="
-          ls -la $U/bin/ | head -20
+          ls -la $U/bin/ | head -30
           echo "=== lib 数量 ==="
           ls $U/lib/ | wc -l
-          echo "=== NEEDED 对照 ==="
-          BIN="$U/bin/${{ matrix.engine }}"
-          [ -f "$BIN" ] || BIN=$(find $U/bin -maxdepth 1 -type f -executable | head -1)
-          for n in $(readelf -d "$BIN" 2>/dev/null | grep NEEDED | sed 's/.*\[\(.*\)\]/\1/'); do
-            case "$n" in
-              libc.so|libdl.so|libm.so|liblog.so|libandroid.so) echo "SYS  $n";;
-              *) if [ -e "$U/lib/$n" ]; then echo "OK   $n"; else echo "MISS $n"; fi;;
-            esac
+          echo "=== 关键二进制 NEEDED 对照 ==="
+          for B in aapt zipalign aapt2; do
+            BIN="$U/bin/$B"
+            [ -f "$BIN" ] || continue
+            echo "--- $B ---"
+            for n in $(readelf -d "$BIN" 2>/dev/null | grep NEEDED | sed 's/.*\[\(.*\)\]/\1/'); do
+              case "$n" in
+                libc.so|libdl.so|libm.so|liblog.so|libandroid.so) echo "  SYS  $n";;
+                *) if [ -e "$U/lib/$n" ]; then echo "  OK   $n"; else echo "  MISS $n"; fi;;
+              esac
+            done
           done
 
       - name: 上传产物
+        if: steps.need.outputs.go == '1'
         uses: actions/upload-artifact@v4
         with:
           name: pkg-${{ matrix.engine }}
@@ -171,15 +175,24 @@ jobs:
           echo "=== Release 资产 ==="
           gh release view "$TAG"
 
-      - name: 生成汇总清单
+      - name: 合并汇总清单
         if: always()
         run: |
           python3 - <<'PY'
           import os, json, hashlib, glob
-          out = {}
+          # 先读仓库里已有的清单，保留这次没构建的引擎
+          old = {}
+          if os.path.exists('built/summary.json'):
+              try:
+                  old = json.load(open('built/summary.json', encoding='utf-8'))
+                  print(f'已有清单 {len(old)} 个引擎，本次只更新构建出来的')
+              except Exception as e:
+                  print(f'旧清单读取失败（忽略）：{e}')
+          out = dict(old)
+          new = []
           for f in sorted(glob.glob('dist/*-engine.tar.gz')):
-              n = os.path.basename(f).replace('-engine.tar.gz','')
-              h = hashlib.md5(open(f,'rb').read()).hexdigest()
+              n = os.path.basename(f).replace('-engine.tar.gz', '')
+              h = hashlib.md5(open(f, 'rb').read()).hexdigest()
               info = {}
               ip = f'dist/{n}-info.json'
               if os.path.exists(ip):
@@ -188,13 +201,16 @@ jobs:
                   'file': os.path.basename(f),
                   'size': os.path.getsize(f),
                   'md5': h,
-                  'version': info.get('version',''),
-                  'desc': info.get('desc',''),
-                  'bin': info.get('bin',''),
+                  'version': info.get('version', ''),
+                  'desc': info.get('desc', ''),
+                  'bin': info.get('bin', ''),
               }
-          json.dump(out, open('dist/summary.json','w',encoding='utf-8'),
+              new.append(n)
+          os.makedirs('dist', exist_ok=True)
+          json.dump(out, open('dist/summary.json', 'w', encoding='utf-8'),
                     ensure_ascii=False, indent=1)
-          print(json.dumps(out, ensure_ascii=False, indent=1))
+          print(f'本次更新 {len(new)} 个：{new}')
+          print(f'清单总计 {len(out)} 个引擎')
           PY
 
       - name: 提交清单回仓库
