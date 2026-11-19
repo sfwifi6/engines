@@ -1,4 +1,4 @@
 # 把下面这一行改成最新版 index.html 的源地址，提交后自动同步到 Release 资产
 # 永久链接：https://github.com/sfwifi6/engines/releases/download/app/index_AICoder_latest.txt
-# 最近更新：2026-11-20 03:37  v10.27.29·紫色悬浮对话球
-https://www.coze.cn/s/3hBkJhvJc0Y/
+# 最近更新：2026-11-20 03:38  v10.27.29·悬浮球打通对话
+https://www.coze.cn/s/fYlbjqADtAQ/
