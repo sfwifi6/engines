@@ -1,4 +1,4 @@
 # 把下面这一行改成最新版 index.html 的源地址，提交后自动同步到 Release 资产
 # 永久链接：https://github.com/sfwifi6/engines/releases/download/app/index_AICoder_latest.txt
-# 最近更新：2026-11-19 11:02  v10.27.19·状态提示
-https://www.coze.cn/s/RmQCMu68sSw/
+# 最近更新：2026-11-19 13:07  v10.27.20·全局挂载
+https://www.coze.cn/s/zQiy7hDWFcs/
