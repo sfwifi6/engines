@@ -50,11 +50,13 @@ jobs:
           #      + AIDE 的 textmate 语法高亮 + ECJ 运行时资源
           #      + 项目树模板（AndroidManifest.xml / src / res）
           #      + bin/aidec 一键编译脚本（aapt2 → javac → d8 → zipalign → apksigner）
+          #      + proot 运行时（bin/proot + libexec/proot/loader(32) + libtalloc + libandroid-shmem）
+          #      + busybox + bin/sh（shell 回退用）
           #
           # ⚠️ 一个字节都不能改：App 里硬编码了 size 和 md5 做校验
-          #    size = 38646758
-          #    md5  = 6e8d2c14d3d3b5bac1b441fa6402611b
-          dl aide-engine.tar.gz "https://www.coze.cn/s/AL0vD1UxtpA/"
+          #    size = 38794824
+          #    md5  = a42f4e46d3d91fc6f2b7b93947522c03
+          dl aide-engine.tar.gz "https://www.coze.cn/s/WsHXydBCXow/"
 
           # ---- androidsdk 已经在 Release v1 里了，需要重传时再放开 ----
           # dl androidsdk-engine.tar.gz "https://www.coze.cn/s/y9608tfU8wk/"
@@ -101,7 +103,7 @@ jobs:
           MD=$(md5sum aide-engine.tar.gz | cut -d' ' -f1)
           log "SIZE=$SZ"
           log "MD5=$MD"
-          if [ "$SZ" = "38646758" ] && [ "$MD" = "6e8d2c14d3d3b5bac1b441fa6402611b" ]; then
+          if [ "$SZ" = "38794824" ] && [ "$MD" = "a42f4e46d3d91fc6f2b7b93947522c03" ]; then
             log "RESULT=verified"
           else
             log "RESULT=mismatch"
