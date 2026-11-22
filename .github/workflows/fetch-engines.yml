@@ -45,25 +45,24 @@ jobs:
             fi
           }
 
-          # ========== aide-engine：AIDE 风格编译环境 ==========
-          # 内容 = androidsdk 全套（aapt2/zipalign/d8/apksigner/android.jar/keystore）
-          #      + AIDE 的 textmate 语法高亮 + ECJ 运行时资源
-          #      + 项目树模板（AndroidManifest.xml / src / res）
-          #      + bin/aidec 一键编译脚本（aapt2 → javac → d8 → zipalign → apksigner）
-          #      + proot 运行时（bin/proot + libexec/proot/loader(32) + libtalloc + libandroid-shmem）
-          #      + busybox + bin/sh
+          # ========== 两个 Android 编译环境包 ==========
+          # ① aide-engine：AIDE 风格（项目树模板 + aidec 一键编译 + textmate + ECJ）
+          # ② androidsdk-engine：纯工具链（aapt2/zipalign/d8/apksigner/android.jar/keystore）
+          #
+          # 两个包现在都带 proot 全套：
+          #   bin/proot + bin/busybox + bin/sh
+          #   libexec/proot/loader + loader32
+          #   lib/libtalloc.so.2.5.0 + .so.2 + .so（三份真实文件，不是软链）
+          #   lib/libandroid-shmem.so
           #
           # ⚠️ 一个字节都不能改：App 里硬编码了 size 和 md5 做校验
-          #    size = 38825268
-          #    md5  = 79964752311abffc312205b9452f2761
+          # ⚠️ 包里 0 个软链 —— Java 侧解 tar.gz 不保证保留软链，软链丢了 proot 就报
+          #    "No such file or directory"（找不到 libtalloc.so.2）
           #
-          # v3 关键变化：包里 0 个软链。libtalloc.so / libtalloc.so.2 / bin/sh 全部换成
-          # 真实文件副本 —— Java 侧解 tar.gz 不保证保留软链，软链丢了 proot 就会报
-          # "No such file or directory"（找不到 libtalloc.so.2）。
+          # aide-engine     size=38825268  md5=79964752311abffc312205b9452f2761
+          # androidsdk-engine size=38051406  md5=67a80a14d681ee237433a0adc8f6655a
           dl aide-engine.tar.gz "https://www.coze.cn/s/RuWtkK8ZOfM/"
-
-          # ---- androidsdk 已经在 Release v1 里了，需要重传时再放开 ----
-          # dl androidsdk-engine.tar.gz "https://www.coze.cn/s/y9608tfU8wk/"
+          dl androidsdk-engine.tar.gz "https://www.coze.cn/s/vu1We79zpwg/"
 
           # ---- 以下引擎包 Release v1 里都已经有了，需要重传时再放开 ----
           # dl python-engine.tar.gz "https://www.coze.cn/s/ZLt-OvAy3Vs/"
@@ -98,21 +97,19 @@ jobs:
           done
 
           log ""
-          log "## 校验 aide-engine"
-          if [ ! -f aide-engine.tar.gz ]; then
-            log "RESULT=download_failed"
-            exit 1
-          fi
-          SZ=$(stat -c%s aide-engine.tar.gz)
-          MD=$(md5sum aide-engine.tar.gz | cut -d' ' -f1)
-          log "SIZE=$SZ"
-          log "MD5=$MD"
-          if [ "$SZ" = "38825268" ] && [ "$MD" = "79964752311abffc312205b9452f2761" ]; then
-            log "RESULT=verified"
-          else
-            log "RESULT=mismatch"
-            exit 1
-          fi
+          log "## 校验"
+          FAIL=0
+          chk() {
+            local fn="$1" esz="$2" emd="$3"
+            if [ ! -f "$fn" ]; then log "$fn  download_failed"; FAIL=1; return; fi
+            local sz=$(stat -c%s "$fn"); local md=$(md5sum "$fn" | cut -d' ' -f1)
+            log "$fn  SIZE=$sz  MD5=$md"
+            if [ "$sz" = "$esz" ] && [ "$md" = "$emd" ]; then log "  -> verified"; else log "  -> mismatch"; FAIL=1; fi
+          }
+          chk aide-engine.tar.gz 38825268 79964752311abffc312205b9452f2761
+          chk androidsdk-engine.tar.gz 38051406 67a80a14d681ee237433a0adc8f6655a
+          if [ "$FAIL" != "0" ]; then log "RESULT=mismatch"; exit 1; fi
+          log "RESULT=verified"
 
       - name: 发布 Release（逐个上传，不中断）
         env:
