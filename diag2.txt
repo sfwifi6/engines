@@ -1,18 +1,18 @@
-# 下载 2026-11-22T13:28:16Z
-↓ androidsdk-engine.tar.gz
-   OK  37881678 bytes  272s
+# 下载 2026-11-22T14:29:13Z
+↓ aide-engine.tar.gz
+   OK  38646758 bytes  25s
 
 ## 结果
-androidsdk-engine.tar.gz  37881678  d82e4bee83e31908721434230ceb7b26
+aide-engine.tar.gz  38646758  6e8d2c14d3d3b5bac1b441fa6402611b
 
-## 校验 androidsdk
-SIZE=37881678
-MD5=d82e4bee83e31908721434230ceb7b26
+## 校验 aide-engine
+SIZE=38646758
+MD5=6e8d2c14d3d3b5bac1b441fa6402611b
 RESULT=verified
 
-# 发布 2026-11-22T13:32:48Z  tag=v1
+# 发布 2026-11-22T14:29:38Z  tag=v1
 Release v1 已存在
-↑ androidsdk-engine.tar.gz  37881678 bytes
+↑ aide-engine.tar.gz  38646758 bytes
    OK
 
 ## Release 资产
@@ -29,6 +29,7 @@ asset:	aapt-engine.tar.gz
 asset:	aapt2-engine.tar.gz
 asset:	ai-engine.tar.gz
 asset:	aiagent-engine.tar.gz
+asset:	aide-engine.tar.gz
 asset:	androidapp-engine.tar.gz
 asset:	androidsdk-engine.tar.gz
 asset:	apkbuild-engine.tar.gz
