@@ -1,39 +1,18 @@
-# 下载 2026-11-18T18:58:03Z
-↓ python-engine.tar.gz
-   OK  16648344 bytes  13s
-↓ clang.p00
-   OK  94371840 bytes  64s
-↓ clang.p01
-   OK  48548417 bytes  28s
-   merge clang OK 142920257
-↓ go.p00
-   OK  94371840 bytes  64s
-↓ go.p01
-   OK  94371840 bytes  51s
-↓ go.p02
-   OK  11216989 bytes  9s
-   merge golang OK 199960669
-↓ jdk.p00
-   OK  94371840 bytes  55s
-↓ jdk.p01
-   OK  38689024 bytes  22s
-   merge openjdk OK 133060864
+# 下载 2026-11-22T13:28:16Z
+↓ androidsdk-engine.tar.gz
+   OK  37881678 bytes  272s
 
 ## 结果
-clang-engine.tar.gz  142920257  8dd063983f4f12fb2d14d2a2252d9497
-golang-engine.tar.gz  199960669  7805fc09024b07f986c8f58dcc726c5c
-openjdk-engine.tar.gz  133060864  956241d3cf432260b4e822dc1a83d164
-python-engine.tar.gz  16648344  5c0749f7843000b1ecee176ff84575d9
+androidsdk-engine.tar.gz  37881678  d82e4bee83e31908721434230ceb7b26
 
-# 发布 2026-11-18T19:03:10Z  tag=v1
+## 校验 androidsdk
+SIZE=37881678
+MD5=d82e4bee83e31908721434230ceb7b26
+RESULT=verified
+
+# 发布 2026-11-22T13:32:48Z  tag=v1
 Release v1 已存在
-↑ clang-engine.tar.gz  142920257 bytes
-   OK
-↑ golang-engine.tar.gz  199960669 bytes
-   OK
-↑ openjdk-engine.tar.gz  133060864 bytes
-   OK
-↑ python-engine.tar.gz  16648344 bytes
+↑ androidsdk-engine.tar.gz  37881678 bytes
    OK
 
 ## Release 资产
@@ -51,6 +30,7 @@ asset:	aapt2-engine.tar.gz
 asset:	ai-engine.tar.gz
 asset:	aiagent-engine.tar.gz
 asset:	androidapp-engine.tar.gz
+asset:	androidsdk-engine.tar.gz
 asset:	apkbuild-engine.tar.gz
 asset:	clang-engine-ustar.tar.gz
 asset:	clang-engine.tar.gz
