@@ -1,5 +1,5 @@
-androidsdk-engine 上传请求
-时间: 2026-11-22T21:13+08:00
+androidsdk-engine 上传请求（第 2 次触发，workflow 已注册完毕）
+时间: 2026-11-22T21:24+08:00
 原因: Release v1 里缺 androidsdk-engine.tar.gz，App「下载安装（37MB）」直链 404
 源: https://www.coze.cn/s/y9608tfU8wk/
 期望: size=37881678 md5=d82e4bee83e31908721434230ceb7b26
