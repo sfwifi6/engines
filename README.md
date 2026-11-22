@@ -2,7 +2,7 @@
 
 自己的语言引擎安装包仓库。手机 APP 从这里直接下载引擎，链接永久有效，不再依赖任何临时地址。
 
-**当前状态：22 个引擎全部构建完成并上线。**
+**当前状态：24 个引擎全部上线**（22 个由 Actions 自动构建，`androidsdk` 和 `aapt2` 由 `fetch-engines.yml` 搬运上传）。
 
 ## App 前端页面（index.html）
 
@@ -15,7 +15,7 @@ https://github.com/sfwifi6/engines/releases/download/app/index_AICoder_latest.tx
 上面这个链接**永远指向最新版**，每版自动覆盖，不用换链接。带版本号的快照：
 
 ```
-https://github.com/sfwifi6/engines/releases/download/app/index_AICoder_v10.27.13.txt
+https://github.com/sfwifi6/engines/releases/download/app/index_AICoder_v10.27.186.txt
 ```
 
 ### 怎么更新前端
@@ -62,6 +62,8 @@ https://github.com/sfwifi6/engines/releases/download/v1/<引擎名>-engine.tar.g
 | 服务器 | Linux 系统工具集 | `sysbase-engine.tar.gz` | 20.8 MB |
 | 移动端 | Kotlin 2.4（含 JDK21） | `kotlin-engine.tar.gz` | 234.9 MB |
 | 移动端 | OpenJDK 17 | `openjdk-engine.tar.gz` | 133.1 MB |
+| 移动端 | Android 编译工具链（aapt2 + zipalign + d8 + apksigner + android.jar + debug.keystore） | `androidsdk-engine.tar.gz` | 37.9 MB |
+| 移动端 | aapt2 资源编译器 | `aapt2-engine.tar.gz` | 6.8 MB |
 | 移动端 | APK 打包工具链 | `apkbuild-engine.tar.gz` | 129.9 MB |
 | 移动端 | Clang 21 全套 | `clang-engine.tar.gz` | 142.9 MB |
 | 小程序 | 微信小程序 | `mpweixin-engine.tar.gz` | 37.4 MB |
@@ -74,6 +76,26 @@ https://github.com/sfwifi6/engines/releases/download/v1/<引擎名>-engine.tar.g
 | AI | AI Agent 框架 | `aiagent-engine.tar.gz` | 13.5 MB |
 
 每个包都自带 `proot`（APP 运行引擎必需），装完直接能用。
+
+### androidsdk 为什么单独搬
+
+APP 里「⬇ 下载安装（37MB）」这个按钮指向的就是 `androidsdk-engine.tar.gz`，它以前从来没传上来过 —— 直链一直 404，用户换机重装只能手动「导入工具链包」。
+
+包内是 AIDE 那套编译链：
+
+```
+manifest.json
+data/data/com.termux/files/usr/bin/aapt2        编资源
+data/data/com.termux/files/usr/bin/zipalign     4 字节对齐
+data/data/com.termux/files/usr/share/java/d8.jar        Java 字节码转 dex
+data/data/com.termux/files/usr/share/java/apksigner.jar APK 签名
+data/data/com.termux/files/usr/share/java/android.jar   Android API
+data/data/com.termux/files/usr/share/android/debug.keystore 调试签名
+```
+
+**一个字节都不能改**：APP 里硬编码了 `size=37881678` / `md5=d82e4bee83e31908721434230ceb7b26` 做校验，改了对不上就装不了。
+
+搬运方式：`fetch-engines.yml` 从 `sdk/request.txt` 或 `trigger/fetch-sdk.txt` 触发，下载 → 校验 size/md5 → `gh release upload v1 --clobber`。
 
 ## 包结构约定
 
@@ -105,6 +127,10 @@ https://github.com/sfwifi6/engines/releases/download/v1/<引擎名>-engine.tar.g
 - 单个构建产物大小、MD5 记录在 `built/summary.json`
 
 公开仓库 Actions 免费不限量。
+
+### 搬运已有包
+
+`fetch-engines.yml` 走 `trigger/**` 触发（`trigger/build.txt` 除外，那是构建用的），当前配置成**只搬 androidsdk**，其余引擎包的下载命令已注释保留在里面，需要重传时放开即可，避免每次都重下几百 MB。
 
 ## 后续：自己的服务器 + 域名
 
