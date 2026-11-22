@@ -25,7 +25,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: 下载并合并分卷（不中断，逐项记录）
+      - name: 下载（逐项记录，不中断）
         run: |
           set -uo pipefail
           rm -f diag2.txt
@@ -45,33 +45,65 @@ jobs:
             fi
           }
 
-          dl python-engine.tar.gz "https://www.coze.cn/s/ZLt-OvAy3Vs/"
+          # ========== 本次只补 androidsdk 引擎包 ==========
+          # androidsdk 是 AIDE 那套编译工具链：aapt2 编资源 + zipalign 对齐 + d8 转 dex
+          # + apksigner 签名 + android.jar 提供 Android API + debug.keystore 调试签名。
+          # 37.9MB。App 里「⬇ 下载安装（37MB）」按钮的 GitHub 直链一直是 404 —— 包从来没传上来过，
+          # 用户换机/重装就装不到，只能手动「导入工具链包」。
+          #
+          # ⚠️ 一个字节都不能改：App 里硬编码了 size 和 md5 做校验，改了就对不上：
+          #    size = 37881678
+          #    md5  = d82e4bee83e31908721434230ceb7b26
+          dl androidsdk-engine.tar.gz "https://www.coze.cn/s/y9608tfU8wk/"
 
-          dl clang.p00 "https://www.coze.cn/s/vo2llN8ZfBE/"
-          dl clang.p01 "https://www.coze.cn/s/wCLR287uFHE/"
-          if [ -f clang.p00 ] && [ -f clang.p01 ]; then
-            cat clang.p00 clang.p01 > clang-engine.tar.gz && log "   merge clang OK $(stat -c%s clang-engine.tar.gz)"
-          fi
-          rm -f clang.p0*
-
-          dl go.p00 "https://www.coze.cn/s/Nnz9_M2KLx4/"
-          dl go.p01 "https://www.coze.cn/s/Ad2nMbw527s/"
-          dl go.p02 "https://www.coze.cn/s/tnMmEE3VjFA/"
-          if [ -f go.p00 ] && [ -f go.p01 ] && [ -f go.p02 ]; then
-            cat go.p00 go.p01 go.p02 > golang-engine.tar.gz && log "   merge golang OK $(stat -c%s golang-engine.tar.gz)"
-          fi
-          rm -f go.p0*
-
-          dl jdk.p00 "https://www.coze.cn/s/ijOR7xqnvsc/"
-          dl jdk.p01 "https://www.coze.cn/s/7B0tCfYJflI/"
-          if [ -f jdk.p00 ] && [ -f jdk.p01 ]; then
-            cat jdk.p00 jdk.p01 > openjdk-engine.tar.gz && log "   merge openjdk OK $(stat -c%s openjdk-engine.tar.gz)"
-          fi
-          rm -f jdk.p0*
+          # ---- 以下引擎包 Release v1 里都已经有了，需要重传时再放开 ----
+          # dl python-engine.tar.gz "https://www.coze.cn/s/ZLt-OvAy3Vs/"
+          #
+          # dl clang.p00 "https://www.coze.cn/s/vo2llN8ZfBE/"
+          # dl clang.p01 "https://www.coze.cn/s/wCLR287uFHE/"
+          # if [ -f clang.p00 ] && [ -f clang.p01 ]; then
+          #   cat clang.p00 clang.p01 > clang-engine.tar.gz && log "   merge clang OK $(stat -c%s clang-engine.tar.gz)"
+          # fi
+          # rm -f clang.p0*
+          #
+          # dl go.p00 "https://www.coze.cn/s/Nnz9_M2KLx4/"
+          # dl go.p01 "https://www.coze.cn/s/Ad2nMbw527s/"
+          # dl go.p02 "https://www.coze.cn/s/tnMmEE3VjFA/"
+          # if [ -f go.p00 ] && [ -f go.p01 ] && [ -f go.p02 ]; then
+          #   cat go.p00 go.p01 go.p02 > golang-engine.tar.gz && log "   merge golang OK $(stat -c%s golang-engine.tar.gz)"
+          # fi
+          # rm -f go.p0*
+          #
+          # dl jdk.p00 "https://www.coze.cn/s/ijOR7xqnvsc/"
+          # dl jdk.p01 "https://www.coze.cn/s/7B0tCfYJflI/"
+          # if [ -f jdk.p00 ] && [ -f jdk.p01 ]; then
+          #   cat jdk.p00 jdk.p01 > openjdk-engine.tar.gz && log "   merge openjdk OK $(stat -c%s openjdk-engine.tar.gz)"
+          # fi
+          # rm -f jdk.p0*
 
           log ""
           log "## 结果"
-          for f in *.tar.gz; do log "$f  $(stat -c%s "$f")  $(md5sum "$f" | cut -d' ' -f1)"; done
+          for f in *.tar.gz; do
+            [ -f "$f" ] || continue
+            log "$f  $(stat -c%s "$f")  $(md5sum "$f" | cut -d' ' -f1)"
+          done
+
+          log ""
+          log "## 校验 androidsdk"
+          if [ ! -f androidsdk-engine.tar.gz ]; then
+            log "RESULT=download_failed"
+            exit 1
+          fi
+          SZ=$(stat -c%s androidsdk-engine.tar.gz)
+          MD=$(md5sum androidsdk-engine.tar.gz | cut -d' ' -f1)
+          log "SIZE=$SZ"
+          log "MD5=$MD"
+          if [ "$SZ" = "37881678" ] && [ "$MD" = "d82e4bee83e31908721434230ceb7b26" ]; then
+            log "RESULT=verified"
+          else
+            log "RESULT=mismatch"
+            exit 1
+          fi
 
       - name: 发布 Release（逐个上传，不中断）
         env:
