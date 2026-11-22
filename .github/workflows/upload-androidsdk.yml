@@ -1,0 +1,97 @@
+name: 上传 androidsdk 引擎包
+
+# 为什么单独一个 workflow：
+#   androidsdk 是 AIDE 那套编译工具链（aapt2 + zipalign + d8 + apksigner + android.jar + debug.keystore），
+#   37.9MB，App 里「⬇ 下载安装（37MB）」按钮的 GitHub 直链一直 404 —— 包从来没传上去过，
+#   用户换机重装就装不到，只能手动「导入工具链包」。
+#   这里把它传到 Release v1，文件名必须是 androidsdk-engine.tar.gz，一个字节都不能改
+#   （App 里硬编码了 size 和 md5 做校验，改了就对不上）。
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'sdk/**'
+  workflow_dispatch:
+    inputs:
+      url:
+        description: '包地址（留空用默认）'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+env:
+  TAG: v1
+  SRC: ${{ inputs.url || 'https://www.coze.cn/s/y9608tfU8wk/' }}
+  NAME: androidsdk-engine.tar.gz
+  WANT_SIZE: '37881678'
+  WANT_MD5: d82e4bee83e31908721434230ceb7b26
+
+jobs:
+  up:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 下载并校验
+        run: |
+          set -uo pipefail
+          echo "# androidsdk 上传 $(date -u +%FT%TZ)" > diag3.txt
+          log(){ echo "$*" | tee -a diag3.txt; }
+          log "SRC=$SRC"
+          log "NAME=$NAME"
+          if ! curl -fL --retry 5 --retry-delay 3 --retry-all-errors \
+               --connect-timeout 30 --max-time 1800 \
+               -o "$NAME" "$SRC"; then
+            log "下载 FAIL code=$?"
+            exit 1
+          fi
+          SZ=$(stat -c%s "$NAME")
+          MD=$(md5sum "$NAME" | cut -d' ' -f1)
+          log "SIZE=$SZ"
+          log "MD5=$MD"
+          log "WANT_SIZE=$WANT_SIZE"
+          log "WANT_MD5=$WANT_MD5"
+          if [ "$SZ" != "$WANT_SIZE" ]; then
+            log "RESULT=size_mismatch"
+            exit 1
+          fi
+          if [ "$MD" != "$WANT_MD5" ]; then
+            log "RESULT=md5_mismatch"
+            exit 1
+          fi
+          log "RESULT=verified"
+
+      - name: 上传到 Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          log(){ echo "$*" | tee -a diag3.txt; }
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            log "创建 Release $TAG"
+            gh release create "$TAG" --title "引擎包 $TAG" \
+              --notes "编程专家 APP 语言引擎安装包（整包，不分卷，直接下）" 2>&1 | tee -a diag3.txt
+          else
+            log "Release $TAG 已存在"
+          fi
+          log "↑ $NAME  $(stat -c%s "$NAME") bytes"
+          if gh release upload "$TAG" "$NAME" --clobber 2>&1 | tee -a diag3.txt; then
+            log "RESULT=uploaded"
+          else
+            log "RESULT=upload_fail"
+            exit 1
+          fi
+          log ""
+          log "## Release 资产"
+          gh release view "$TAG" 2>&1 | tee -a diag3.txt
+
+      - name: 记录诊断
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f diag3.txt || true
+          git commit -m "androidsdk 上传诊断 $(date -u +%FT%TZ)" || echo "无变化"
+          git pull --rebase || true
+          git push || echo "push 失败"
