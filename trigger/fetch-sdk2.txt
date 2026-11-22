@@ -1,0 +1,4 @@
+v195 androidsdk 补 proot
+2026-11-22T23:27:00Z
+aide-engine.tar.gz      38825268  79964752311abffc312205b9452f2761
+androidsdk-engine.tar.gz 38051406  67a80a14d681ee237433a0adc8f6655a
