@@ -49,20 +49,23 @@ jobs:
           # ① aide-engine：AIDE 风格（项目树模板 + aidec 一键编译 + textmate + ECJ）
           # ② androidsdk-engine：纯工具链（aapt2/zipalign/d8/apksigner/android.jar/keystore）
           #
-          # 两个包现在都带 proot 全套：
+          # 两个包都带完整 proot + busybox 运行时：
           #   bin/proot + bin/busybox + bin/sh
           #   libexec/proot/loader + loader32
           #   lib/libtalloc.so.2.5.0 + .so.2 + .so（三份真实文件，不是软链）
           #   lib/libandroid-shmem.so
+          #   lib/libbusybox.so.1.38.0   ← busybox 本体（bin/busybox 只是 4KB 的壳）
+          #   lib/libandroid-selinux.so  ← libbusybox 的依赖
+          #   lib/libpcre2-8.so          ← libandroid-selinux 的依赖
           #
           # ⚠️ 一个字节都不能改：App 里硬编码了 size 和 md5 做校验
-          # ⚠️ 包里 0 个软链 —— Java 侧解 tar.gz 不保证保留软链，软链丢了 proot 就报
-          #    "No such file or directory"（找不到 libtalloc.so.2）
+          # ⚠️ 包里 0 个软链 —— App 解压时 Os.symlink 失败会被 catch 静默吞掉，
+          #    软链丢了 proot 就报 "No such file or directory"（找不到 libtalloc.so.2）
           #
-          # aide-engine     size=38825268  md5=79964752311abffc312205b9452f2761
-          # androidsdk-engine size=38051406  md5=67a80a14d681ee237433a0adc8f6655a
-          dl aide-engine.tar.gz "https://www.coze.cn/s/RuWtkK8ZOfM/"
-          dl androidsdk-engine.tar.gz "https://www.coze.cn/s/vu1We79zpwg/"
+          # aide-engine        size=39630828  md5=e55943c33c53f43436f73306a53af11a
+          # androidsdk-engine  size=38858438  md5=88284ec440272f1416642854d31d3d58
+          dl aide-engine.tar.gz "https://www.coze.cn/s/2RR9KLIRfpk/"
+          dl androidsdk-engine.tar.gz "https://www.coze.cn/s/S6-dtHV25Qw/"
 
           # ---- 以下引擎包 Release v1 里都已经有了，需要重传时再放开 ----
           # dl python-engine.tar.gz "https://www.coze.cn/s/ZLt-OvAy3Vs/"
@@ -106,8 +109,8 @@ jobs:
             log "$fn  SIZE=$sz  MD5=$md"
             if [ "$sz" = "$esz" ] && [ "$md" = "$emd" ]; then log "  -> verified"; else log "  -> mismatch"; FAIL=1; fi
           }
-          chk aide-engine.tar.gz 38825268 79964752311abffc312205b9452f2761
-          chk androidsdk-engine.tar.gz 38051406 67a80a14d681ee237433a0adc8f6655a
+          chk aide-engine.tar.gz 39630828 e55943c33c53f43436f73306a53af11a
+          chk androidsdk-engine.tar.gz 38858438 88284ec440272f1416642854d31d3d58
           if [ "$FAIL" != "0" ]; then log "RESULT=mismatch"; exit 1; fi
           log "RESULT=verified"
 
