@@ -1,18 +1,18 @@
-# 下载 2026-11-22T14:29:13Z
+# 下载 2026-11-22T15:12:59Z
 ↓ aide-engine.tar.gz
-   OK  38646758 bytes  25s
+   OK  38794824 bytes  30s
 
 ## 结果
-aide-engine.tar.gz  38646758  6e8d2c14d3d3b5bac1b441fa6402611b
+aide-engine.tar.gz  38794824  a42f4e46d3d91fc6f2b7b93947522c03
 
 ## 校验 aide-engine
-SIZE=38646758
-MD5=6e8d2c14d3d3b5bac1b441fa6402611b
+SIZE=38794824
+MD5=a42f4e46d3d91fc6f2b7b93947522c03
 RESULT=verified
 
-# 发布 2026-11-22T14:29:38Z  tag=v1
+# 发布 2026-11-22T15:13:29Z  tag=v1
 Release v1 已存在
-↑ aide-engine.tar.gz  38646758 bytes
+↑ aide-engine.tar.gz  38794824 bytes
    OK
 
 ## Release 资产
