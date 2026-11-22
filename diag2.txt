@@ -1,18 +1,25 @@
-# 下载 2026-11-22T15:23:53Z
+# 下载 2026-11-22T15:28:08Z
 ↓ aide-engine.tar.gz
-   OK  38825268 bytes  28s
+   OK  38825268 bytes  25s
+↓ androidsdk-engine.tar.gz
+   OK  38051406 bytes  22s
 
 ## 结果
 aide-engine.tar.gz  38825268  79964752311abffc312205b9452f2761
+androidsdk-engine.tar.gz  38051406  67a80a14d681ee237433a0adc8f6655a
 
-## 校验 aide-engine
-SIZE=38825268
-MD5=79964752311abffc312205b9452f2761
+## 校验
+aide-engine.tar.gz  SIZE=38825268  MD5=79964752311abffc312205b9452f2761
+  -> verified
+androidsdk-engine.tar.gz  SIZE=38051406  MD5=67a80a14d681ee237433a0adc8f6655a
+  -> verified
 RESULT=verified
 
-# 发布 2026-11-22T15:24:21Z  tag=v1
+# 发布 2026-11-22T15:28:56Z  tag=v1
 Release v1 已存在
 ↑ aide-engine.tar.gz  38825268 bytes
+   OK
+↑ androidsdk-engine.tar.gz  38051406 bytes
    OK
 
 ## Release 资产
