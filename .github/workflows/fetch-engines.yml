@@ -45,16 +45,19 @@ jobs:
             fi
           }
 
-          # ========== 本次只补 androidsdk 引擎包 ==========
-          # androidsdk 是 AIDE 那套编译工具链：aapt2 编资源 + zipalign 对齐 + d8 转 dex
-          # + apksigner 签名 + android.jar 提供 Android API + debug.keystore 调试签名。
-          # 37.9MB。App 里「⬇ 下载安装（37MB）」按钮的 GitHub 直链一直是 404 —— 包从来没传上来过，
-          # 用户换机/重装就装不到，只能手动「导入工具链包」。
+          # ========== aide-engine：AIDE 风格编译环境 ==========
+          # 内容 = androidsdk 全套（aapt2/zipalign/d8/apksigner/android.jar/keystore）
+          #      + AIDE 的 textmate 语法高亮 + ECJ 运行时资源
+          #      + 项目树模板（AndroidManifest.xml / src / res）
+          #      + bin/aidec 一键编译脚本（aapt2 → javac → d8 → zipalign → apksigner）
           #
-          # ⚠️ 一个字节都不能改：App 里硬编码了 size 和 md5 做校验，改了就对不上：
-          #    size = 37881678
-          #    md5  = d82e4bee83e31908721434230ceb7b26
-          dl androidsdk-engine.tar.gz "https://www.coze.cn/s/y9608tfU8wk/"
+          # ⚠️ 一个字节都不能改：App 里硬编码了 size 和 md5 做校验
+          #    size = 38646758
+          #    md5  = 6e8d2c14d3d3b5bac1b441fa6402611b
+          dl aide-engine.tar.gz "https://www.coze.cn/s/AL0vD1UxtpA/"
+
+          # ---- androidsdk 已经在 Release v1 里了，需要重传时再放开 ----
+          # dl androidsdk-engine.tar.gz "https://www.coze.cn/s/y9608tfU8wk/"
 
           # ---- 以下引擎包 Release v1 里都已经有了，需要重传时再放开 ----
           # dl python-engine.tar.gz "https://www.coze.cn/s/ZLt-OvAy3Vs/"
@@ -89,16 +92,16 @@ jobs:
           done
 
           log ""
-          log "## 校验 androidsdk"
-          if [ ! -f androidsdk-engine.tar.gz ]; then
+          log "## 校验 aide-engine"
+          if [ ! -f aide-engine.tar.gz ]; then
             log "RESULT=download_failed"
             exit 1
           fi
-          SZ=$(stat -c%s androidsdk-engine.tar.gz)
-          MD=$(md5sum androidsdk-engine.tar.gz | cut -d' ' -f1)
+          SZ=$(stat -c%s aide-engine.tar.gz)
+          MD=$(md5sum aide-engine.tar.gz | cut -d' ' -f1)
           log "SIZE=$SZ"
           log "MD5=$MD"
-          if [ "$SZ" = "37881678" ] && [ "$MD" = "d82e4bee83e31908721434230ceb7b26" ]; then
+          if [ "$SZ" = "38646758" ] && [ "$MD" = "6e8d2c14d3d3b5bac1b441fa6402611b" ]; then
             log "RESULT=verified"
           else
             log "RESULT=mismatch"
